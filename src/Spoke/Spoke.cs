@@ -1171,9 +1171,11 @@ namespace Spoke
                     {
                         var transformOutput = ProcessTransform(
                             subscription.TransformFunction,
+                            @event.EventId,
+                            @event.CreateDate,
                             @event.EventPayload,
                             @event.Topics,
-                            subscription.RequestType );
+                            subscription.RequestType);
 
                         var liveRetryAbortAfterMinutes = subscription.AbortAfterMinutes ??
                                                          Configuration.DefaultAbortAfterMinutes ?? 0;
@@ -1555,18 +1557,21 @@ namespace Spoke
             /// Process the javascript transform for the subscription.
             /// </summary>
             /// <param name="transform">The javascript transform.</param>
+            /// <param name="eventId">The Spoke eventId of the event</param>
+            /// <param name="eventCreateDate">The event create date</param>
             /// <param name="eventPayload">The request object.</param>
             /// <param name="topics">List of event topics.</param>
             /// <param name="requestType">The type of request you are making.</param>
             /// <returns><see cref="string"/></returns>
-            private static string ProcessTransform( string transform, object eventPayload,
-                IDictionary<string, string> topics, string requestType )
+            private static string ProcessTransform(string transform, object eventId, DateTime eventCreateDate, object eventPayload,
+                IDictionary<string, string> topics, string requestType)
             {
                 if ( eventPayload == null )
                 {
                     eventPayload = new object();
                 }
 
+                #region Javascript Setup
                 // All curly brackets need to be escaped by doubling the brackets since
                 // we are using String.Format
                 const string script = @"
@@ -1673,14 +1678,19 @@ function processTransform(eventData, topicData) {{
   return JSON.stringify(requestObj);
 }};
 ";
+                #endregion Javascript Setup
+
                 var engine = new Engine();
 
-                var result = engine.Execute( string.Format( script, string.IsNullOrEmpty( transform ) ? string.Empty : transform ) )
-                    .SetValue( "requestType", string.IsNullOrEmpty( requestType ) ? "OBJECT" : requestType )
-                    .SetValue( "eventData", Configuration.JsonSerializer.Serialize( eventPayload ) )
-                    .SetValue( "topicData", Configuration.JsonSerializer.Serialize( topics ) )
-                    .SetValue( "ToDateString", new Func<int, int, int, string>( ToDateString ) )
-                    .Execute( "processTransform(eventData, topicData)" )
+                var result = engine.Execute(string.Format(script, string.IsNullOrEmpty(transform) ? string.Empty : transform))
+                    .SetValue("requestType", string.IsNullOrEmpty(requestType) ? "OBJECT" : requestType)
+                    .SetValue("eventData", Configuration.JsonSerializer.Serialize(eventPayload))
+                    .SetValue("topicData", Configuration.JsonSerializer.Serialize(topics))
+                    .SetValue("ToDateString", new Func<int, int, int, string>(ToDateString))
+                    .SetValue("eventId", eventId == null ? "0" : eventId.ToString())
+                    .SetValue("eventCreateDate", eventCreateDate.ToString())
+                    .SetValue("spokeInstanceName", Configuration.AppName)
+                    .Execute("processTransform(eventData, topicData)")
                     .GetCompletionValue();
 
                 return result.ToString();
