@@ -1171,10 +1171,7 @@ namespace Spoke
                     {
                         var transformOutput = ProcessTransform(
                             subscription.TransformFunction,
-                            @event.EventId,
-                            @event.CreateDate,
-                            @event.EventPayload,
-                            @event.Topics,
+                            @event,
                             subscription.RequestType);
 
                         var liveRetryAbortAfterMinutes = subscription.AbortAfterMinutes ??
@@ -1557,15 +1554,13 @@ namespace Spoke
             /// Process the javascript transform for the subscription.
             /// </summary>
             /// <param name="transform">The javascript transform.</param>
-            /// <param name="eventId">The Spoke eventId of the event</param>
-            /// <param name="eventCreateDate">The event create date</param>
-            /// <param name="eventPayload">The request object.</param>
-            /// <param name="topics">List of event topics.</param>
+            /// <param name="event">The Spoke event</param>
             /// <param name="requestType">The type of request you are making.</param>
             /// <returns><see cref="string"/></returns>
-            private static string ProcessTransform(string transform, object eventId, DateTime eventCreateDate, object eventPayload,
-                IDictionary<string, string> topics, string requestType)
+            private static string ProcessTransform(string transform, Models.Event @event, string requestType)
             {
+                object eventPayload = @event.EventPayload;
+
                 if ( eventPayload == null )
                 {
                     eventPayload = new object();
@@ -1685,10 +1680,9 @@ function processTransform(eventData, topicData) {{
                 var result = engine.Execute(string.Format(script, string.IsNullOrEmpty(transform) ? string.Empty : transform))
                     .SetValue("requestType", string.IsNullOrEmpty(requestType) ? "OBJECT" : requestType)
                     .SetValue("eventData", Configuration.JsonSerializer.Serialize(eventPayload))
-                    .SetValue("topicData", Configuration.JsonSerializer.Serialize(topics))
+                    .SetValue("topicData", Configuration.JsonSerializer.Serialize(@event.Topics))
                     .SetValue("ToDateString", new Func<int, int, int, string>(ToDateString))
-                    .SetValue("eventId", eventId == null ? "0" : eventId.ToString())
-                    .SetValue("eventCreateDate", eventCreateDate.ToString())
+                    .SetValue("triggerEvent", @event)
                     .SetValue("spokeInstanceName", Configuration.AppName)
                     .Execute("processTransform(eventData, topicData)")
                     .GetCompletionValue();
