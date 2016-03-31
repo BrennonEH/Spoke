@@ -1,7 +1,7 @@
 # Spoke
 Spoke is a webhooks library designed to be implemented in your current service application.
 
-Current Version: 0.09.1
+Current Version: 0.09.2
 
 ###Documentation###
 
