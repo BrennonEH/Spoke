@@ -42,6 +42,7 @@ using System.Linq;
 using System.Net;
 using System.Reflection;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace SequelocityDotNet
 {
@@ -58,18 +59,18 @@ namespace SequelocityDotNet
         /// <summary>Gets a <see cref="DatabaseCommand" /> given a <see cref="DbCommand" /> instance.</summary>
         /// <param name="dbCommand"><see cref="DbCommand" /> instance.</param>
         /// <returns>A new <see cref="DatabaseCommand" /> instance.</returns>
-        public static DatabaseCommand GetDatabaseCommand( DbCommand dbCommand )
+        public static DatabaseCommand GetDatabaseCommand(DbCommand dbCommand)
         {
-            return new DatabaseCommand( dbCommand );
+            return new DatabaseCommand(dbCommand);
         }
 
         /// <summary>Gets a <see cref="DatabaseCommand" /> given a <see cref="DbConnection" /> instance.</summary>
         /// <param name="dbConnection"><see cref="DbConnection" /> instance.</param>
         /// <returns>A new <see cref="DatabaseCommand" /> instance.</returns>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="dbConnection" /> parameter is null.</exception>
-        public static DatabaseCommand GetDatabaseCommand( DbConnection dbConnection )
+        public static DatabaseCommand GetDatabaseCommand(DbConnection dbConnection)
         {
-            return new DatabaseCommand( dbConnection );
+            return new DatabaseCommand(dbConnection);
         }
 
         /// <summary>Attempts to get a <see cref="DatabaseCommand" /> using several strategies.</summary>
@@ -100,11 +101,11 @@ namespace SequelocityDotNet
         /// <exception cref="DatabaseCommand">
         /// An unknown error occurred creating a connection as the call to DbProviderFactory.CreateConnection() returned null.
         /// </exception>
-        public static DatabaseCommand GetDatabaseCommand( string connectionStringOrName = null, string dbProviderFactoryInvariantName = null )
+        public static DatabaseCommand GetDatabaseCommand(string connectionStringOrName = null, string dbProviderFactoryInvariantName = null)
         {
-            DbConnection dbConnection = CreateDbConnection( connectionStringOrName, dbProviderFactoryInvariantName );
+            DbConnection dbConnection = CreateDbConnection(connectionStringOrName, dbProviderFactoryInvariantName);
 
-            var databaseCommand = new DatabaseCommand( dbConnection );
+            var databaseCommand = new DatabaseCommand(dbConnection);
 
             return databaseCommand;
         }
@@ -128,19 +129,19 @@ namespace SequelocityDotNet
         /// <exception cref="Exception">
         /// An unknown error occurred creating a connection as the call to DbProviderFactory.CreateConnection() returned null.
         /// </exception>
-        public static DatabaseCommand GetDatabaseCommandForSqlServer( string connectionStringOrName = null, string applicationName = null )
+        public static DatabaseCommand GetDatabaseCommandForSqlServer(string connectionStringOrName = null, string applicationName = null)
         {
-            var databaseCommand = GetDatabaseCommand( connectionStringOrName, "System.Data.SqlClient" );
+            var databaseCommand = GetDatabaseCommand(connectionStringOrName, "System.Data.SqlClient");
 
-            var builder = new System.Data.SqlClient.SqlConnectionStringBuilder( databaseCommand.DbCommand.Connection.ConnectionString );
+            var builder = new System.Data.SqlClient.SqlConnectionStringBuilder(databaseCommand.DbCommand.Connection.ConnectionString);
 
-            if ( String.IsNullOrWhiteSpace( builder.ApplicationName ) )
+            if (String.IsNullOrWhiteSpace(builder.ApplicationName))
             {
-                if ( String.IsNullOrWhiteSpace( applicationName ) == false )
+                if (String.IsNullOrWhiteSpace(applicationName) == false)
                 {
                     builder.ApplicationName = applicationName;
                 }
-                else if ( String.IsNullOrWhiteSpace( ConfigurationSettings.Default.ApplicationName ) == false )
+                else if (String.IsNullOrWhiteSpace(ConfigurationSettings.Default.ApplicationName) == false)
                 {
                     builder.ApplicationName = ConfigurationSettings.Default.ApplicationName;
                 }
@@ -170,9 +171,9 @@ namespace SequelocityDotNet
         /// An unknown error occurred creating a connection as the call to DbProviderFactory.CreateConnection() returned null.
         /// </exception>
         // ReSharper disable once InconsistentNaming
-        public static DatabaseCommand GetDatabaseCommandForSQLite( string connectionStringOrName = null )
+        public static DatabaseCommand GetDatabaseCommandForSQLite(string connectionStringOrName = null)
         {
-            return GetDatabaseCommand( connectionStringOrName, "System.Data.SQLite" );
+            return GetDatabaseCommand(connectionStringOrName, "System.Data.SQLite");
         }
 
         /// <summary>Gets a <see cref="DatabaseCommand" /> that interacts with a MySQL database.</summary>
@@ -194,9 +195,9 @@ namespace SequelocityDotNet
         /// An unknown error occurred creating a connection as the call to DbProviderFactory.CreateConnection() returned null.
         /// </exception>
         // ReSharper disable once InconsistentNaming
-        public static DatabaseCommand GetDatabaseCommandForMySql( string connectionStringOrName = null )
+        public static DatabaseCommand GetDatabaseCommandForMySql(string connectionStringOrName = null)
         {
-            return GetDatabaseCommand( connectionStringOrName, "MySql.Data.MySqlClient" );
+            return GetDatabaseCommand(connectionStringOrName, "MySql.Data.MySqlClient");
         }
 
         /// <summary>Attempts to create a <see cref="DbConnection" /> using several strategies.</summary>
@@ -226,22 +227,22 @@ namespace SequelocityDotNet
         /// <exception cref="Exception">
         /// An unknown error occurred creating a connection as the call to DbProviderFactory.CreateConnection() returned null.
         /// </exception>
-        public static DbConnection CreateDbConnection( string connectionStringOrName = null, string dbProviderFactoryInvariantName = null )
+        public static DbConnection CreateDbConnection(string connectionStringOrName = null, string dbProviderFactoryInvariantName = null)
         {
             string connectionString = null;
 
-            if ( String.IsNullOrWhiteSpace( connectionStringOrName ) == false )
+            if (String.IsNullOrWhiteSpace(connectionStringOrName) == false)
             {
                 // Try obtaining the connection string by name first as the connection string settings could contain a DbProviderFactory provider name
-                ConnectionStringSettings connectionStringSettings = ConfigurationSettings.GetConnectionStringByNameAccessor( connectionStringOrName );
+                ConnectionStringSettings connectionStringSettings = ConfigurationSettings.GetConnectionStringByNameAccessor(connectionStringOrName);
 
-                if ( connectionStringSettings != null )
+                if (connectionStringSettings != null)
                 {
                     connectionString = connectionStringSettings.ConnectionString;
 
-                    if ( String.IsNullOrWhiteSpace( connectionStringSettings.ProviderName ) == false )
+                    if (String.IsNullOrWhiteSpace(connectionStringSettings.ProviderName) == false)
                     {
-                        DbConnection connection = InternalCreateDbConnection( connectionString, connectionStringSettings.ProviderName );
+                        DbConnection connection = InternalCreateDbConnection(connectionString, connectionStringSettings.ProviderName);
 
                         return connection;
                     }
@@ -251,17 +252,17 @@ namespace SequelocityDotNet
             }
 
             // Try obtaining the connection string by name using the default setting
-            if ( connectionString == null && String.IsNullOrWhiteSpace( ConfigurationSettings.Default.ConnectionStringName ) == false )
+            if (connectionString == null && String.IsNullOrWhiteSpace(ConfigurationSettings.Default.ConnectionStringName) == false)
             {
-                ConnectionStringSettings connectionStringSettings = ConfigurationSettings.GetConnectionStringByNameAccessor( ConfigurationSettings.Default.ConnectionStringName );
+                ConnectionStringSettings connectionStringSettings = ConfigurationSettings.GetConnectionStringByNameAccessor(ConfigurationSettings.Default.ConnectionStringName);
 
-                if ( connectionStringSettings != null )
+                if (connectionStringSettings != null)
                 {
                     connectionString = connectionStringSettings.ConnectionString;
 
-                    if ( String.IsNullOrWhiteSpace( connectionStringSettings.ProviderName ) == false )
+                    if (String.IsNullOrWhiteSpace(connectionStringSettings.ProviderName) == false)
                     {
-                        DbConnection connection = InternalCreateDbConnection( connectionString, connectionStringSettings.ProviderName );
+                        DbConnection connection = InternalCreateDbConnection(connectionString, connectionStringSettings.ProviderName);
 
                         return connection;
                     }
@@ -269,31 +270,31 @@ namespace SequelocityDotNet
             }
 
             // Try obtaining the connection string using the default setting
-            if ( connectionString == null && String.IsNullOrWhiteSpace( ConfigurationSettings.Default.ConnectionString ) == false )
+            if (connectionString == null && String.IsNullOrWhiteSpace(ConfigurationSettings.Default.ConnectionString) == false)
             {
                 connectionString = ConfigurationSettings.Default.ConnectionString;
             }
 
-            if ( connectionString == null )
+            if (connectionString == null)
             {
-                throw new ConnectionStringNotFoundException( "No ConnectionString could be found. A valid ConnectionString or Connection String Name must be supplied in the 'connectionStringOrName' parameter or by setting a default in either the 'DatabaseCommand.ConfigurationSettings.Default.ConnectionStringName' or 'DatabaseCommand.ConfigurationSettings.Default.ConnectionString' properties." );
+                throw new ConnectionStringNotFoundException("No ConnectionString could be found. A valid ConnectionString or Connection String Name must be supplied in the 'connectionStringOrName' parameter or by setting a default in either the 'DatabaseCommand.ConfigurationSettings.Default.ConnectionStringName' or 'DatabaseCommand.ConfigurationSettings.Default.ConnectionString' properties.");
             }
 
-            if ( String.IsNullOrWhiteSpace( dbProviderFactoryInvariantName ) == false )
+            if (String.IsNullOrWhiteSpace(dbProviderFactoryInvariantName) == false)
             {
-                DbConnection connection = InternalCreateDbConnection( connectionString, dbProviderFactoryInvariantName );
+                DbConnection connection = InternalCreateDbConnection(connectionString, dbProviderFactoryInvariantName);
 
                 return connection;
             }
 
-            if ( String.IsNullOrWhiteSpace( ConfigurationSettings.Default.DbProviderFactoryInvariantName ) == false )
+            if (String.IsNullOrWhiteSpace(ConfigurationSettings.Default.DbProviderFactoryInvariantName) == false)
             {
-                DbConnection connection = InternalCreateDbConnection( connectionString, ConfigurationSettings.Default.DbProviderFactoryInvariantName );
+                DbConnection connection = InternalCreateDbConnection(connectionString, ConfigurationSettings.Default.DbProviderFactoryInvariantName);
 
                 return connection;
             }
 
-            throw new DbProviderFactoryNotFoundException( "No DbProviderFactory could be found. A DbProviderFactory invariant name must be supplied in the connection string settings 'providerName' attribute in the applications config file, in the 'dbProviderFactoryInvariantName' parameter, or by setting a default in the 'DatabaseCommand.ConfigurationSettings.Default.DbProviderFactoryInvariantName' property." );
+            throw new DbProviderFactoryNotFoundException("No DbProviderFactory could be found. A DbProviderFactory invariant name must be supplied in the connection string settings 'providerName' attribute in the applications config file, in the 'dbProviderFactoryInvariantName' parameter, or by setting a default in the 'DatabaseCommand.ConfigurationSettings.Default.DbProviderFactoryInvariantName' property.");
         }
 
         /// <summary>Creates a <see cref="DbConnection" />.</summary>
@@ -308,25 +309,25 @@ namespace SequelocityDotNet
         /// <exception cref="Exception">
         /// An unknown error occurred creating a connection as the call to DbProviderFactory.CreateConnection() returned null.
         /// </exception>
-        private static DbConnection InternalCreateDbConnection( string connectionString, string dbProviderFactoryInvariantName )
+        private static DbConnection InternalCreateDbConnection(string connectionString, string dbProviderFactoryInvariantName)
         {
-            if ( String.IsNullOrWhiteSpace( connectionString ) )
+            if (String.IsNullOrWhiteSpace(connectionString))
             {
-                throw new ArgumentNullException( "connectionString" );
+                throw new ArgumentNullException("connectionString");
             }
 
-            if ( String.IsNullOrWhiteSpace( dbProviderFactoryInvariantName ) )
+            if (String.IsNullOrWhiteSpace(dbProviderFactoryInvariantName))
             {
-                throw new ArgumentNullException( "dbProviderFactoryInvariantName" );
+                throw new ArgumentNullException("dbProviderFactoryInvariantName");
             }
 
-            DbProviderFactory dbProviderFactory = DbProviderFactories.GetFactory( dbProviderFactoryInvariantName );
+            DbProviderFactory dbProviderFactory = DbProviderFactories.GetFactory(dbProviderFactoryInvariantName);
 
             DbConnection connection = dbProviderFactory.CreateConnection();
 
-            if ( connection == null )
+            if (connection == null)
             {
-                throw new Exception( "An unknown error occurred creating a connection as the call to DbProviderFactory.CreateConnection() returned null." );
+                throw new Exception("An unknown error occurred creating a connection as the call to DbProviderFactory.CreateConnection() returned null.");
             }
 
             connection.ConnectionString = connectionString;
@@ -370,7 +371,7 @@ namespace SequelocityDotNet
 
                 /// <summary>The current application name.</summary>
                 /// <remarks>Default implementation is Environment.MachineName-AppDomain.CurrentDomain.FriendlyName.</remarks>
-                public static string ApplicationName = String.Format( "{0}-{1}", Environment.MachineName, AppDomain.CurrentDomain.FriendlyName );
+                public static string ApplicationName = String.Format("{0}-{1}", Environment.MachineName, AppDomain.CurrentDomain.FriendlyName);
             }
 
             /// <summary>
@@ -380,16 +381,16 @@ namespace SequelocityDotNet
             {
                 /// <summary>Event handler called after the <see cref="DatabaseCommand" /> has been executed.</summary>
                 /// <param name="databaseCommand"><see cref="DatabaseCommand" /> instance.</param>
-                public delegate void DatabaseCommandPostExecuteEventHandler( DatabaseCommand databaseCommand );
+                public delegate void DatabaseCommandPostExecuteEventHandler(DatabaseCommand databaseCommand);
 
                 /// <summary>Event handler called before the <see cref="DatabaseCommand" /> is executed.</summary>
                 /// <param name="databaseCommand"><see cref="DatabaseCommand" /> instance.</param>
-                public delegate void DatabaseCommandPreExecuteEventHandler( DatabaseCommand databaseCommand );
+                public delegate void DatabaseCommandPreExecuteEventHandler(DatabaseCommand databaseCommand);
 
                 /// <summary>Event handler called when an unhandled exception occurs.</summary>
                 /// <param name="exception">Unhandled exception.</param>
                 /// <param name="databaseCommand"><see cref="DatabaseCommand" /> instance.</param>
-                public delegate void DatabaseCommandUnhandledExceptionEventHandler( Exception exception, DatabaseCommand databaseCommand );
+                public delegate void DatabaseCommandUnhandledExceptionEventHandler(Exception exception, DatabaseCommand databaseCommand);
 
                 /// <summary>Event triggered when an unhandled exception occurs.</summary>
                 public static readonly List<DatabaseCommandUnhandledExceptionEventHandler> DatabaseCommandUnhandledExceptionEventHandlers = new List<DatabaseCommandUnhandledExceptionEventHandler>();
@@ -403,31 +404,31 @@ namespace SequelocityDotNet
                 /// <summary>Invokes the <see cref="DatabaseCommand" /> unhandled exception event handlers.</summary>
                 /// <param name="exception">Unhandled exception.</param>
                 /// <param name="databaseCommand"><see cref="DatabaseCommand" /> instance.</param>
-                public static void InvokeDatabaseCommandUnhandledExceptionEventHandlers( Exception exception, DatabaseCommand databaseCommand )
+                public static void InvokeDatabaseCommandUnhandledExceptionEventHandlers(Exception exception, DatabaseCommand databaseCommand)
                 {
-                    foreach ( DatabaseCommandUnhandledExceptionEventHandler databaseCommandUnhandledExceptionEventHandler in DatabaseCommandUnhandledExceptionEventHandlers )
+                    foreach (DatabaseCommandUnhandledExceptionEventHandler databaseCommandUnhandledExceptionEventHandler in DatabaseCommandUnhandledExceptionEventHandlers)
                     {
-                        databaseCommandUnhandledExceptionEventHandler.Invoke( exception, databaseCommand );
+                        databaseCommandUnhandledExceptionEventHandler.Invoke(exception, databaseCommand);
                     }
                 }
 
                 /// <summary>Invokes the <see cref="DatabaseCommand" /> pre-execute event handlers.</summary>
                 /// <param name="databaseCommand"><see cref="DatabaseCommand" /> instance.</param>
-                public static void InvokeDatabaseCommandPreExecuteEventHandlers( DatabaseCommand databaseCommand )
+                public static void InvokeDatabaseCommandPreExecuteEventHandlers(DatabaseCommand databaseCommand)
                 {
-                    foreach ( DatabaseCommandPreExecuteEventHandler databaseCommandPreExecuteEventHandler in DatabaseCommandPreExecuteEventHandlers )
+                    foreach (DatabaseCommandPreExecuteEventHandler databaseCommandPreExecuteEventHandler in DatabaseCommandPreExecuteEventHandlers)
                     {
-                        databaseCommandPreExecuteEventHandler.Invoke( databaseCommand );
+                        databaseCommandPreExecuteEventHandler.Invoke(databaseCommand);
                     }
                 }
 
                 /// <summary>Invokes the <see cref="DatabaseCommand" /> post-execute event handlers.</summary>
                 /// <param name="databaseCommand"><see cref="DatabaseCommand" /> instance.</param>
-                public static void InvokeDatabaseCommandPostExecuteEventHandlers( DatabaseCommand databaseCommand )
+                public static void InvokeDatabaseCommandPostExecuteEventHandlers(DatabaseCommand databaseCommand)
                 {
-                    foreach ( DatabaseCommandPostExecuteEventHandler databaseCommandPostExecuteEventHandler in DatabaseCommandPostExecuteEventHandlers )
+                    foreach (DatabaseCommandPostExecuteEventHandler databaseCommandPostExecuteEventHandler in DatabaseCommandPostExecuteEventHandlers)
                     {
-                        databaseCommandPostExecuteEventHandler.Invoke( databaseCommand );
+                        databaseCommandPostExecuteEventHandler.Invoke(databaseCommand);
                     }
                 }
             }
@@ -441,8 +442,8 @@ namespace SequelocityDotNet
             /// Instantiates a new <see cref="Sequelocity.ConnectionStringNotFoundException" /> with a specified error message.
             /// </summary>
             /// <param name="message">The message that describes the error.</param>
-            public ConnectionStringNotFoundException( string message )
-                : base( message )
+            public ConnectionStringNotFoundException(string message)
+                : base(message)
             {
             }
         }
@@ -455,8 +456,8 @@ namespace SequelocityDotNet
             /// Instantiates a new <see cref="Sequelocity.DbProviderFactoryNotFoundException" /> with a specified error message.
             /// </summary>
             /// <param name="message">The message that describes the error.</param>
-            public DbProviderFactoryNotFoundException( string message )
-                : base( message )
+            public DbProviderFactoryNotFoundException(string message)
+                : base(message)
             {
             }
         }
@@ -477,11 +478,11 @@ namespace SequelocityDotNet
         /// <summary>Instantiates a new <see cref="DatabaseCommand" /> by supplying a <see cref="DbCommand" />.</summary>
         /// <param name="dbCommand">DbCommand.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="dbCommand" /> parameter is null.</exception>
-        public DatabaseCommand( DbCommand dbCommand )
+        public DatabaseCommand(DbCommand dbCommand)
         {
-            if ( dbCommand == null )
+            if (dbCommand == null)
             {
-                throw new ArgumentNullException( "dbCommand" );
+                throw new ArgumentNullException("dbCommand");
             }
 
             DbCommand = dbCommand;
@@ -490,11 +491,11 @@ namespace SequelocityDotNet
         /// <summary>Instantiates a new <see cref="DatabaseCommand" /> by supplying a <see cref="DbConnection" />.</summary>
         /// <param name="dbConnection">DbConnection.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="dbConnection" /> parameter is null.</exception>
-        public DatabaseCommand( DbConnection dbConnection )
+        public DatabaseCommand(DbConnection dbConnection)
         {
-            if ( dbConnection == null )
+            if (dbConnection == null)
             {
-                throw new ArgumentNullException( "dbConnection" );
+                throw new ArgumentNullException("dbConnection");
             }
 
             DbCommand = dbConnection.CreateCommand();
@@ -505,22 +506,22 @@ namespace SequelocityDotNet
         /// <summary>Disposes of the underlying <see cref="DbCommand" /> and it's <see cref="DbConnection" />.</summary>
         public void Dispose()
         {
-            Dispose( true );
+            Dispose(true);
 
             // Use SupressFinalize in case a subclass
             // of this type implements a finalizer.
-            GC.SuppressFinalize( this );
+            GC.SuppressFinalize(this);
         }
 
         /// <summary>Disposes of the underlying <see cref="DbCommand" />.</summary>
         /// <param name="disposing">Indicates if being called from the Dispose method.</param>
-        protected virtual void Dispose( bool disposing )
+        protected virtual void Dispose(bool disposing)
         {
-            if ( _disposed == false )
+            if (_disposed == false)
             {
-                if ( disposing )
+                if (disposing)
                 {
-                    if ( DbCommand != null )
+                    if (DbCommand != null)
                     {
                         try
                         {
@@ -554,9 +555,9 @@ namespace SequelocityDotNet
         /// <param name="databaseCommand"><see cref="DatabaseCommand" /> instance.</param>
         /// <param name="commandText">The text command to run against the data source.</param>
         /// <returns>The given <see cref="DatabaseCommand" /> instance.</returns>
-        public static DatabaseCommand SetCommandText( this DatabaseCommand databaseCommand, string commandText )
+        public static DatabaseCommand SetCommandText(this DatabaseCommand databaseCommand, string commandText)
         {
-            databaseCommand.DbCommand.SetCommandText( commandText );
+            databaseCommand.DbCommand.SetCommandText(commandText);
 
             return databaseCommand;
         }
@@ -565,9 +566,9 @@ namespace SequelocityDotNet
         /// <param name="databaseCommand"><see cref="DatabaseCommand" /> instance.</param>
         /// <param name="commandText">Text command to append to the text command to run against the data source.</param>
         /// <returns>The given <see cref="DatabaseCommand" /> instance.</returns>
-        public static DatabaseCommand AppendCommandText( this DatabaseCommand databaseCommand, string commandText )
+        public static DatabaseCommand AppendCommandText(this DatabaseCommand databaseCommand, string commandText)
         {
-            databaseCommand.DbCommand.AppendCommandText( commandText );
+            databaseCommand.DbCommand.AppendCommandText(commandText);
 
             return databaseCommand;
         }
@@ -576,9 +577,9 @@ namespace SequelocityDotNet
         /// <param name="databaseCommand"><see cref="DatabaseCommand" /> instance.</param>
         /// <param name="dbParameter"><see cref="DbParameter" /> to add.</param>
         /// <returns>The given <see cref="DatabaseCommand" /> instance.</returns>
-        public static DatabaseCommand AddParameter( this DatabaseCommand databaseCommand, DbParameter dbParameter )
+        public static DatabaseCommand AddParameter(this DatabaseCommand databaseCommand, DbParameter dbParameter)
         {
-            databaseCommand.DbCommand.AddParameter( dbParameter );
+            databaseCommand.DbCommand.AddParameter(dbParameter);
 
             return databaseCommand;
         }
@@ -588,9 +589,9 @@ namespace SequelocityDotNet
         /// <param name="parameterName">Parameter name.</param>
         /// <param name="parameterValue">Parameter value.</param>
         /// <returns>The given <see cref="DatabaseCommand" /> instance.</returns>
-        public static DatabaseCommand AddParameter( this DatabaseCommand databaseCommand, string parameterName, object parameterValue )
+        public static DatabaseCommand AddParameter(this DatabaseCommand databaseCommand, string parameterName, object parameterValue)
         {
-            databaseCommand.DbCommand.AddParameter( parameterName, parameterValue );
+            databaseCommand.DbCommand.AddParameter(parameterName, parameterValue);
 
             return databaseCommand;
         }
@@ -601,9 +602,22 @@ namespace SequelocityDotNet
         /// <param name="parameterValue">Parameter value.</param>
         /// <param name="dbType">Parameter type.</param>
         /// <returns>The given <see cref="DatabaseCommand" /> instance.</returns>
-        public static DatabaseCommand AddParameter( this DatabaseCommand databaseCommand, string parameterName, object parameterValue, DbType dbType )
+        public static DatabaseCommand AddParameter(this DatabaseCommand databaseCommand, string parameterName, object parameterValue, DbType dbType)
         {
-            databaseCommand.DbCommand.AddParameter( parameterName, parameterValue, dbType );
+            databaseCommand.DbCommand.AddParameter(parameterName, parameterValue, dbType);
+
+            return databaseCommand;
+        }
+
+        /// <summary>Adds a parameter whose default value is <see cref="DBNull"/> when unassigned, to the <see cref="DatabaseCommand" />.</summary>
+        /// <param name="databaseCommand"><see cref="DatabaseCommand" /> instance.</param>
+        /// <param name="parameterName">Parameter name.</param>
+        /// <param name="parameterValue">Parameter value.</param>
+        /// <param name="dbType">Parameter type.</param>
+        /// <returns>The given <see cref="DatabaseCommand" /> instance.</returns>
+        public static DatabaseCommand AddNullableParameter(this DatabaseCommand databaseCommand, string parameterName, object parameterValue, DbType dbType)
+        {
+            databaseCommand.DbCommand.AddNullableParameter(parameterName, parameterValue, dbType);
 
             return databaseCommand;
         }
@@ -612,9 +626,9 @@ namespace SequelocityDotNet
         /// <param name="databaseCommand"><see cref="DatabaseCommand" /> instance.</param>
         /// <param name="dbParameters">List of database parameters.</param>
         /// <returns>The given <see cref="DatabaseCommand" /> instance.</returns>
-        public static DatabaseCommand AddParameters( this DatabaseCommand databaseCommand, IEnumerable<DbParameter> dbParameters )
+        public static DatabaseCommand AddParameters(this DatabaseCommand databaseCommand, IEnumerable<DbParameter> dbParameters)
         {
-            databaseCommand.DbCommand.AddParameters( dbParameters );
+            databaseCommand.DbCommand.AddParameters(dbParameters);
 
             return databaseCommand;
         }
@@ -623,9 +637,9 @@ namespace SequelocityDotNet
         /// <param name="databaseCommand"><see cref="DatabaseCommand" /> instance.</param>
         /// <param name="dbParameters">Parameter array of database parameters.</param>
         /// <returns>The given <see cref="DatabaseCommand" /> instance.</returns>
-        public static DatabaseCommand AddParameters( this DatabaseCommand databaseCommand, params DbParameter[] dbParameters )
+        public static DatabaseCommand AddParameters(this DatabaseCommand databaseCommand, params DbParameter[] dbParameters)
         {
-            databaseCommand.DbCommand.AddParameters( dbParameters );
+            databaseCommand.DbCommand.AddParameters(dbParameters);
 
             return databaseCommand;
         }
@@ -634,9 +648,9 @@ namespace SequelocityDotNet
         /// <param name="databaseCommand"><see cref="DatabaseCommand" /> instance.</param>
         /// <param name="parameterNameAndValueDictionary">Dictionary of parameter names and values.</param>
         /// <returns>The given <see cref="DatabaseCommand" /> instance.</returns>
-        public static DatabaseCommand AddParameters( this DatabaseCommand databaseCommand, IDictionary<string, object> parameterNameAndValueDictionary )
+        public static DatabaseCommand AddParameters(this DatabaseCommand databaseCommand, IDictionary<string, object> parameterNameAndValueDictionary)
         {
-            databaseCommand.DbCommand.AddParameters( parameterNameAndValueDictionary );
+            databaseCommand.DbCommand.AddParameters(parameterNameAndValueDictionary);
 
             return databaseCommand;
         }
@@ -656,9 +670,9 @@ namespace SequelocityDotNet
         /// <exception cref="Exception">Thrown when the <paramref name="parameterValues" /> list is empty.</exception>
         /// <exception cref="Exception">Thrown when the CommandText has not been set prior to calling this method.</exception>
         /// <exception cref="Exception">Thrown when the CommandText does not contain the <paramref name="parameterName" />.</exception>
-        public static DatabaseCommand AddParameters<T>( this DatabaseCommand databaseCommand, string parameterName, List<T> parameterValues )
+        public static DatabaseCommand AddParameters<T>(this DatabaseCommand databaseCommand, string parameterName, List<T> parameterValues)
         {
-            databaseCommand.DbCommand.AddParameters( parameterName, parameterValues );
+            databaseCommand.DbCommand.AddParameters(parameterName, parameterValues);
 
             return databaseCommand;
         }
@@ -679,9 +693,9 @@ namespace SequelocityDotNet
         /// <exception cref="Exception">Thrown when the <paramref name="parameterValues" /> list is empty.</exception>
         /// <exception cref="Exception">Thrown when the CommandText has not been set prior to calling this method.</exception>
         /// <exception cref="Exception">Thrown when the CommandText does not contain the <paramref name="parameterName" />.</exception>
-        public static DatabaseCommand AddParameters<T>( this DatabaseCommand databaseCommand, string parameterName, List<T> parameterValues, DbType dbType )
+        public static DatabaseCommand AddParameters<T>(this DatabaseCommand databaseCommand, string parameterName, List<T> parameterValues, DbType dbType)
         {
-            databaseCommand.DbCommand.AddParameters( parameterName, parameterValues, dbType );
+            databaseCommand.DbCommand.AddParameters(parameterName, parameterValues, dbType);
 
             return databaseCommand;
         }
@@ -691,9 +705,9 @@ namespace SequelocityDotNet
         /// <param name="parameterName">Parameter name.</param>
         /// <param name="parameterValue">Parameter value.</param>
         /// <returns><see cref="DbParameter" />.</returns>
-        public static DbParameter CreateParameter( this DatabaseCommand databaseCommand, string parameterName, object parameterValue )
+        public static DbParameter CreateParameter(this DatabaseCommand databaseCommand, string parameterName, object parameterValue)
         {
-            DbParameter parameter = databaseCommand.DbCommand.CreateParameter( parameterName, parameterValue );
+            DbParameter parameter = databaseCommand.DbCommand.CreateParameter(parameterName, parameterValue);
 
             return parameter;
         }
@@ -704,9 +718,9 @@ namespace SequelocityDotNet
         /// <param name="parameterValue">Parameter value.</param>
         /// <param name="dbType">Parameter type.</param>
         /// <returns><see cref="DbParameter" />.</returns>
-        public static DbParameter CreateParameter( this DatabaseCommand databaseCommand, string parameterName, object parameterValue, DbType dbType )
+        public static DbParameter CreateParameter(this DatabaseCommand databaseCommand, string parameterName, object parameterValue, DbType dbType)
         {
-            DbParameter parameter = databaseCommand.DbCommand.CreateParameter( parameterName, parameterValue, dbType );
+            DbParameter parameter = databaseCommand.DbCommand.CreateParameter(parameterName, parameterValue, dbType);
 
             return parameter;
         }
@@ -720,9 +734,9 @@ namespace SequelocityDotNet
         /// <param name="dbType">Parameter type.</param>
         /// <param name="parameterDirection">Parameter direction.</param>
         /// <returns><see cref="DbParameter" />.</returns>
-        public static DbParameter CreateParameter( this DatabaseCommand databaseCommand, string parameterName, object parameterValue, DbType dbType, ParameterDirection parameterDirection )
+        public static DbParameter CreateParameter(this DatabaseCommand databaseCommand, string parameterName, object parameterValue, DbType dbType, ParameterDirection parameterDirection)
         {
-            DbParameter parameter = databaseCommand.DbCommand.CreateParameter( parameterName, parameterValue, dbType, parameterDirection );
+            DbParameter parameter = databaseCommand.DbCommand.CreateParameter(parameterName, parameterValue, dbType, parameterDirection);
 
             return parameter;
         }
@@ -731,9 +745,9 @@ namespace SequelocityDotNet
         /// <param name="databaseCommand"><see cref="DatabaseCommand" /> instance.</param>
         /// <param name="commandType">CommandType which specifies how a command string is interpreted.</param>
         /// <returns>The given <see cref="DatabaseCommand" /> instance.</returns>
-        public static DatabaseCommand SetCommandType( this DatabaseCommand databaseCommand, CommandType commandType )
+        public static DatabaseCommand SetCommandType(this DatabaseCommand databaseCommand, CommandType commandType)
         {
-            databaseCommand.DbCommand.SetCommandType( commandType );
+            databaseCommand.DbCommand.SetCommandType(commandType);
 
             return databaseCommand;
         }
@@ -744,9 +758,9 @@ namespace SequelocityDotNet
         /// <param name="databaseCommand"><see cref="DatabaseCommand" /> instance.</param>
         /// <param name="commandTimeoutSeconds">The time in seconds to wait for the command to execute. The default is 30 seconds.</param>
         /// <returns>The given <see cref="DatabaseCommand" /> instance.</returns>
-        public static DatabaseCommand SetCommandTimeout( this DatabaseCommand databaseCommand, int commandTimeoutSeconds )
+        public static DatabaseCommand SetCommandTimeout(this DatabaseCommand databaseCommand, int commandTimeoutSeconds)
         {
-            databaseCommand.DbCommand.SetCommandTimeout( commandTimeoutSeconds );
+            databaseCommand.DbCommand.SetCommandTimeout(commandTimeoutSeconds);
 
             return databaseCommand;
         }
@@ -755,9 +769,9 @@ namespace SequelocityDotNet
         /// <param name="databaseCommand"><see cref="DatabaseCommand" /> instance.</param>
         /// <param name="dbTransaction">The transaction to associate with the command.</param>
         /// <returns>The given <see cref="DatabaseCommand" /> instance.</returns>
-        public static DatabaseCommand SetTransaction( this DatabaseCommand databaseCommand, DbTransaction dbTransaction )
+        public static DatabaseCommand SetTransaction(this DatabaseCommand databaseCommand, DbTransaction dbTransaction)
         {
-            databaseCommand.DbCommand.SetTransaction( dbTransaction );
+            databaseCommand.DbCommand.SetTransaction(dbTransaction);
 
             return databaseCommand;
         }
@@ -767,7 +781,7 @@ namespace SequelocityDotNet
         /// </summary>
         /// <param name="databaseCommand"><see cref="DatabaseCommand" /> instance.</param>
         /// <returns>An object representing the new transaction.</returns>
-        public static DbTransaction BeginTransaction( this DatabaseCommand databaseCommand )
+        public static DbTransaction BeginTransaction(this DatabaseCommand databaseCommand)
         {
             DbTransaction transaction = databaseCommand.DbCommand.BeginTransaction();
 
@@ -780,9 +794,9 @@ namespace SequelocityDotNet
         /// <param name="databaseCommand"><see cref="DatabaseCommand" /> instance.</param>
         /// <param name="isolationLevel">Specifies the isolation level for the transaction.</param>
         /// <returns>An object representing the new transaction.</returns>
-        public static DbTransaction BeginTransaction( this DatabaseCommand databaseCommand, IsolationLevel isolationLevel )
+        public static DbTransaction BeginTransaction(this DatabaseCommand databaseCommand, IsolationLevel isolationLevel)
         {
-            DbTransaction transaction = databaseCommand.DbCommand.BeginTransaction( isolationLevel );
+            DbTransaction transaction = databaseCommand.DbCommand.BeginTransaction(isolationLevel);
 
             return transaction;
         }
@@ -792,7 +806,7 @@ namespace SequelocityDotNet
         /// </summary>
         /// <param name="databaseCommand"><see cref="DatabaseCommand" /> instance.</param>
         /// <returns>Returns true if a connection can be successfully opened and closed. </returns>
-        public static bool TestConnection( this DatabaseCommand databaseCommand )
+        public static bool TestConnection(this DatabaseCommand databaseCommand)
         {
             try
             {
@@ -802,7 +816,7 @@ namespace SequelocityDotNet
 
                 return true;
             }
-            catch ( Exception )
+            catch (Exception)
             {
                 return false;
             }
@@ -812,11 +826,11 @@ namespace SequelocityDotNet
         /// <param name="databaseCommand"><see cref="DatabaseCommand" /> instance.</param>
         /// <returns><see cref="DbCommand" /> instance.</returns>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="databaseCommand" /> parameter is null.</exception>
-        public static DbCommand ToDbCommand( this DatabaseCommand databaseCommand )
+        public static DbCommand ToDbCommand(this DatabaseCommand databaseCommand)
         {
-            if ( databaseCommand == null )
+            if (databaseCommand == null)
             {
-                throw new ArgumentNullException( "databaseCommand" );
+                throw new ArgumentNullException("databaseCommand");
             }
 
             return databaseCommand.DbCommand;
@@ -826,14 +840,14 @@ namespace SequelocityDotNet
         /// <param name="dbCommand"><see cref="DbCommand" /> instance.</param>
         /// <returns><see cref="DatabaseCommand" /> instance.</returns>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="dbCommand" /> parameter is null.</exception>
-        public static DatabaseCommand ToDatabaseCommand( this DbCommand dbCommand )
+        public static DatabaseCommand ToDatabaseCommand(this DbCommand dbCommand)
         {
-            if ( dbCommand == null )
+            if (dbCommand == null)
             {
-                throw new ArgumentNullException( "dbCommand" );
+                throw new ArgumentNullException("dbCommand");
             }
 
-            return new DatabaseCommand( dbCommand );
+            return new DatabaseCommand(dbCommand);
         }
 
         /// <summary>
@@ -851,9 +865,9 @@ namespace SequelocityDotNet
         /// The value of 'tableName' cannot be null when the object passed is an anonymous
         /// type.
         /// </exception>
-        public static DatabaseCommand GenerateInsertForMySql( this DatabaseCommand databaseCommand, object obj, string tableName = null )
+        public static DatabaseCommand GenerateInsertForMySql(this DatabaseCommand databaseCommand, object obj, string tableName = null)
         {
-            databaseCommand.DbCommand.GenerateInsertForMySql( obj, tableName );
+            databaseCommand.DbCommand.GenerateInsertForMySql(obj, tableName);
 
             return databaseCommand;
         }
@@ -877,9 +891,9 @@ namespace SequelocityDotNet
         /// The value of 'tableName' cannot be null when the object passed is an anonymous
         /// type.
         /// </exception>
-        public static DatabaseCommand GenerateInsertsForMySql<T>( this DatabaseCommand databaseCommand, List<T> listOfObjects, string tableName = null )
+        public static DatabaseCommand GenerateInsertsForMySql<T>(this DatabaseCommand databaseCommand, List<T> listOfObjects, string tableName = null)
         {
-            databaseCommand.DbCommand.GenerateInsertsForMySql( listOfObjects, tableName );
+            databaseCommand.DbCommand.GenerateInsertsForMySql(listOfObjects, tableName);
 
             return databaseCommand;
         }
@@ -900,9 +914,9 @@ namespace SequelocityDotNet
         /// type.
         /// </exception>
         // ReSharper disable once InconsistentNaming
-        public static DatabaseCommand GenerateInsertForSQLite( this DatabaseCommand databaseCommand, object obj, string tableName = null )
+        public static DatabaseCommand GenerateInsertForSQLite(this DatabaseCommand databaseCommand, object obj, string tableName = null)
         {
-            databaseCommand.DbCommand.GenerateInsertForSQLite( obj, tableName );
+            databaseCommand.DbCommand.GenerateInsertForSQLite(obj, tableName);
 
             return databaseCommand;
         }
@@ -927,9 +941,9 @@ namespace SequelocityDotNet
         /// type.
         /// </exception>
         // ReSharper disable once InconsistentNaming
-        public static DatabaseCommand GenerateInsertsForSQLite<T>( this DatabaseCommand databaseCommand, List<T> listOfObjects, string tableName = null )
+        public static DatabaseCommand GenerateInsertsForSQLite<T>(this DatabaseCommand databaseCommand, List<T> listOfObjects, string tableName = null)
         {
-            databaseCommand.DbCommand.GenerateInsertsForSQLite( listOfObjects, tableName );
+            databaseCommand.DbCommand.GenerateInsertsForSQLite(listOfObjects, tableName);
 
             return databaseCommand;
         }
@@ -945,9 +959,9 @@ namespace SequelocityDotNet
         /// <param name="obj">Object to generate the SQL INSERT statement from.</param>
         /// <param name="tableName">Optional table name to insert into. If none is supplied, it will use the type name.</param>
         /// <returns>The given <see cref="DatabaseCommand" /> instance.</returns>
-        public static DatabaseCommand GenerateInsertForSqlServer( this DatabaseCommand databaseCommand, object obj, string tableName = null )
+        public static DatabaseCommand GenerateInsertForSqlServer(this DatabaseCommand databaseCommand, object obj, string tableName = null)
         {
-            databaseCommand.DbCommand.GenerateInsertForSqlServer( obj, tableName );
+            databaseCommand.DbCommand.GenerateInsertForSqlServer(obj, tableName);
 
             return databaseCommand;
         }
@@ -971,9 +985,9 @@ namespace SequelocityDotNet
         /// The value of 'tableName' cannot be null when the object passed is an anonymous
         /// type.
         /// </exception>
-        public static DatabaseCommand GenerateInsertsForSqlServer<T>( this DatabaseCommand databaseCommand, List<T> listOfObjects, string tableName = null )
+        public static DatabaseCommand GenerateInsertsForSqlServer<T>(this DatabaseCommand databaseCommand, List<T> listOfObjects, string tableName = null)
         {
-            databaseCommand.DbCommand.GenerateInsertsForSqlServer( listOfObjects, tableName );
+            databaseCommand.DbCommand.GenerateInsertsForSqlServer(listOfObjects, tableName);
 
             return databaseCommand;
         }
@@ -985,29 +999,67 @@ namespace SequelocityDotNet
         /// <param name="keepConnectionOpen">Optional parameter indicating whether to keep the connection open. Default is false.</param>
         /// <returns>The number of rows affected.</returns>
         /// <exception cref="Exception">Unexpected exception.</exception>
-        public static int ExecuteNonQuery( this DatabaseCommand databaseCommand, bool keepConnectionOpen = false )
+        public static int ExecuteNonQuery(this DatabaseCommand databaseCommand, bool keepConnectionOpen = false)
         {
             int numberOfRowsAffected;
 
             try
             {
-                Sequelocity.ConfigurationSettings.EventHandlers.InvokeDatabaseCommandPreExecuteEventHandlers( databaseCommand );
+                Sequelocity.ConfigurationSettings.EventHandlers.InvokeDatabaseCommandPreExecuteEventHandlers(databaseCommand);
 
                 databaseCommand.DbCommand.OpenConnection();
 
                 numberOfRowsAffected = databaseCommand.DbCommand.ExecuteNonQuery();
 
-                Sequelocity.ConfigurationSettings.EventHandlers.InvokeDatabaseCommandPostExecuteEventHandlers( databaseCommand );
+                Sequelocity.ConfigurationSettings.EventHandlers.InvokeDatabaseCommandPostExecuteEventHandlers(databaseCommand);
             }
-            catch ( Exception exception )
+            catch (Exception exception)
             {
-                Sequelocity.ConfigurationSettings.EventHandlers.InvokeDatabaseCommandUnhandledExceptionEventHandlers( exception, databaseCommand );
+                Sequelocity.ConfigurationSettings.EventHandlers.InvokeDatabaseCommandUnhandledExceptionEventHandlers(exception, databaseCommand);
 
                 throw;
             }
             finally
             {
-                if ( keepConnectionOpen == false )
+                if (keepConnectionOpen == false)
+                {
+                    databaseCommand.DbCommand.CloseAndDispose();
+
+                    databaseCommand.DbCommand = null;
+                }
+            }
+
+            return numberOfRowsAffected;
+        }
+
+        /// <summary>Executes a statement against the database asynchronously and returns the number of rows affected.</summary>
+        /// <param name="databaseCommand"><see cref="DatabaseCommand" /> instance.</param>
+        /// <param name="keepConnectionOpen">Optional parameter indicating whether to keep the connection open. Default is false.</param>
+        /// <returns>A <see cref="Task{TResult}"/> resulting in the number of rows affected.</returns>
+        /// <exception cref="Exception">Unexpected exception.</exception>
+        public static async Task<int> ExecuteNonQueryAsync(this DatabaseCommand databaseCommand, bool keepConnectionOpen = false)
+        {
+            int numberOfRowsAffected;
+
+            try
+            {
+                Sequelocity.ConfigurationSettings.EventHandlers.InvokeDatabaseCommandPreExecuteEventHandlers(databaseCommand);
+
+                await databaseCommand.DbCommand.OpenConnectionAsync();
+
+                numberOfRowsAffected = await databaseCommand.DbCommand.ExecuteNonQueryAsync();
+
+                Sequelocity.ConfigurationSettings.EventHandlers.InvokeDatabaseCommandPostExecuteEventHandlers(databaseCommand);
+            }
+            catch (Exception exception)
+            {
+                Sequelocity.ConfigurationSettings.EventHandlers.InvokeDatabaseCommandUnhandledExceptionEventHandlers(exception, databaseCommand);
+
+                throw;
+            }
+            finally
+            {
+                if (keepConnectionOpen == false)
                 {
                     databaseCommand.DbCommand.CloseAndDispose();
 
@@ -1025,32 +1077,75 @@ namespace SequelocityDotNet
         /// <param name="databaseCommand"><see cref="DatabaseCommand" /> instance.</param>
         /// <param name="keepConnectionOpen">Optional parameter indicating whether to keep the connection open. Default is false.</param>
         /// <returns>The first column of the first row in the result set.</returns>
-        public static object ExecuteScalar( this DatabaseCommand databaseCommand, bool keepConnectionOpen = false )
+        public static object ExecuteScalar(this DatabaseCommand databaseCommand, bool keepConnectionOpen = false)
         {
             object returnValue;
 
             try
             {
-                Sequelocity.ConfigurationSettings.EventHandlers.InvokeDatabaseCommandPreExecuteEventHandlers( databaseCommand );
+                Sequelocity.ConfigurationSettings.EventHandlers.InvokeDatabaseCommandPreExecuteEventHandlers(databaseCommand);
 
                 databaseCommand.DbCommand.OpenConnection();
 
                 returnValue = databaseCommand.DbCommand.ExecuteScalar();
 
-                if ( returnValue == DBNull.Value )
+                if (returnValue == DBNull.Value)
                     returnValue = null;
 
-                Sequelocity.ConfigurationSettings.EventHandlers.InvokeDatabaseCommandPostExecuteEventHandlers( databaseCommand );
+                Sequelocity.ConfigurationSettings.EventHandlers.InvokeDatabaseCommandPostExecuteEventHandlers(databaseCommand);
             }
-            catch ( Exception exception )
+            catch (Exception exception)
             {
-                Sequelocity.ConfigurationSettings.EventHandlers.InvokeDatabaseCommandUnhandledExceptionEventHandlers( exception, databaseCommand );
+                Sequelocity.ConfigurationSettings.EventHandlers.InvokeDatabaseCommandUnhandledExceptionEventHandlers(exception, databaseCommand);
 
                 throw;
             }
             finally
             {
-                if ( keepConnectionOpen == false )
+                if (keepConnectionOpen == false)
+                {
+                    databaseCommand.DbCommand.CloseAndDispose();
+
+                    databaseCommand.DbCommand = null;
+                }
+            }
+
+            return returnValue;
+        }
+
+        /// <summary>
+        /// Executes the query asynchronously and returns the first column of the first row in the result set returned by the query.
+        /// All other columns and rows are ignored.
+        /// </summary>
+        /// <param name="databaseCommand"><see cref="DatabaseCommand" /> instance.</param>
+        /// <param name="keepConnectionOpen">Optional parameter indicating whether to keep the connection open. Default is false.</param>
+        /// <returns>A <see cref="Task{TResult}"/> resulting in the first column of the first row in the result set.</returns>
+        public static async Task<object> ExecuteScalarAsync(this DatabaseCommand databaseCommand, bool keepConnectionOpen = false)
+        {
+            object returnValue;
+
+            try
+            {
+                Sequelocity.ConfigurationSettings.EventHandlers.InvokeDatabaseCommandPreExecuteEventHandlers(databaseCommand);
+
+                await databaseCommand.DbCommand.OpenConnectionAsync();
+
+                returnValue = await databaseCommand.DbCommand.ExecuteScalarAsync();
+
+                if (returnValue == DBNull.Value)
+                    returnValue = null;
+
+                Sequelocity.ConfigurationSettings.EventHandlers.InvokeDatabaseCommandPostExecuteEventHandlers(databaseCommand);
+            }
+            catch (Exception exception)
+            {
+                Sequelocity.ConfigurationSettings.EventHandlers.InvokeDatabaseCommandUnhandledExceptionEventHandlers(exception, databaseCommand);
+
+                throw;
+            }
+            finally
+            {
+                if (keepConnectionOpen == false)
                 {
                     databaseCommand.DbCommand.CloseAndDispose();
 
@@ -1079,9 +1174,35 @@ namespace SequelocityDotNet
         /// Thrown when an error occurs attempting to convert a value to a
         /// type.
         /// </exception>
-        public static T ExecuteScalar<T>( this DatabaseCommand databaseCommand, bool keepConnectionOpen = false )
+        public static T ExecuteScalar<T>(this DatabaseCommand databaseCommand, bool keepConnectionOpen = false)
         {
-            object returnValue = databaseCommand.ExecuteScalar( keepConnectionOpen );
+            object returnValue = databaseCommand.ExecuteScalar(keepConnectionOpen);
+
+            return returnValue.ConvertTo<T>();
+        }
+
+        /// <summary>
+        /// Executes the query asynchronously and returns the first column of the first row in the result set returned by the query.
+        /// All other columns and rows are ignored.
+        /// </summary>
+        /// <typeparam name="T">Type to convert the result to.</typeparam>
+        /// <param name="databaseCommand"><see cref="DatabaseCommand" /> instance.</param>
+        /// <param name="keepConnectionOpen">Optional parameter indicating whether to keep the connection open. Default is false.</param>
+        /// <returns>
+        /// A <see cref="Task{TResult}"/> resulting in the first column of the first row in the result set converted to a type
+        /// of <typeparamref name="T" />.
+        /// </returns>
+        /// <exception cref="TypeConverter.TypeConversionException">
+        /// Thrown when an error occurs attempting to convert a value to an
+        /// enum.
+        /// </exception>
+        /// <exception cref="TypeConverter.TypeConversionException">
+        /// Thrown when an error occurs attempting to convert a value to a
+        /// type.
+        /// </exception>
+        public static async Task<T> ExecuteScalarAsync<T>(this DatabaseCommand databaseCommand, bool keepConnectionOpen = false)
+        {
+            object returnValue = await databaseCommand.ExecuteScalarAsync(keepConnectionOpen);
 
             return returnValue.ConvertTo<T>();
         }
@@ -1097,38 +1218,190 @@ namespace SequelocityDotNet
         /// <param name="databaseCommand"><see cref="DatabaseCommand" /> instance.</param>
         /// <param name="dataRecordCallback">Action called for each record returned.</param>
         /// <param name="keepConnectionOpen">Optional parameter indicating whether to keep the connection open. Default is false.</param>
-        public static void ExecuteReader( this DatabaseCommand databaseCommand, Action<IDataRecord> dataRecordCallback, bool keepConnectionOpen = false )
+        public static void ExecuteReader(this DatabaseCommand databaseCommand, Action<IDataRecord> dataRecordCallback, bool keepConnectionOpen = false)
         {
             try
             {
-                Sequelocity.ConfigurationSettings.EventHandlers.InvokeDatabaseCommandPreExecuteEventHandlers( databaseCommand );
+                Sequelocity.ConfigurationSettings.EventHandlers.InvokeDatabaseCommandPreExecuteEventHandlers(databaseCommand);
 
                 databaseCommand.DbCommand.OpenConnection();
 
-                using ( DbDataReader dbDataReader = databaseCommand.DbCommand.ExecuteReader() )
+                using (DbDataReader dbDataReader = databaseCommand.DbCommand.ExecuteReader())
                 {
-                    while ( dbDataReader.HasRows )
+                    while (dbDataReader.HasRows)
                     {
-                        while ( dbDataReader.Read() )
+                        while (dbDataReader.Read())
                         {
-                            dataRecordCallback.Invoke( dbDataReader );
+                            dataRecordCallback.Invoke(dbDataReader);
                         }
 
                         dbDataReader.NextResult();
                     }
                 }
 
-                Sequelocity.ConfigurationSettings.EventHandlers.InvokeDatabaseCommandPostExecuteEventHandlers( databaseCommand );
+                Sequelocity.ConfigurationSettings.EventHandlers.InvokeDatabaseCommandPostExecuteEventHandlers(databaseCommand);
             }
-            catch ( Exception exception )
+            catch (Exception exception)
             {
-                Sequelocity.ConfigurationSettings.EventHandlers.InvokeDatabaseCommandUnhandledExceptionEventHandlers( exception, databaseCommand );
+                Sequelocity.ConfigurationSettings.EventHandlers.InvokeDatabaseCommandUnhandledExceptionEventHandlers(exception, databaseCommand);
 
                 throw;
             }
             finally
             {
-                if ( keepConnectionOpen == false )
+                if (keepConnectionOpen == false)
+                {
+                    databaseCommand.DbCommand.CloseAndDispose();
+
+                    databaseCommand.DbCommand = null;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Executes a statement against the database and calls the <paramref name="selector" /> function for each record returned.
+        /// </summary>
+        /// <remarks>
+        /// For safety the DbDataReader is returned as an IDataRecord to the callback so that callers cannot modify the current row
+        /// being read.
+        /// </remarks>
+        /// <param name="databaseCommand"><see cref="DatabaseCommand" /> instance.</param>
+        /// <param name="selector">Function called for each record returned.</param>
+        /// <param name="keepConnectionOpen">Optional parameter indicating whether to keep the connection open. Default is false.</param>
+        public static IEnumerable<T> ExecuteReader<T>(this DatabaseCommand databaseCommand, Func<IDataRecord, T> selector, bool keepConnectionOpen = false)
+        {
+            DbDataReader dbDataReader = null;
+
+            try
+            {
+                try
+                {
+                    Sequelocity.ConfigurationSettings.EventHandlers.InvokeDatabaseCommandPreExecuteEventHandlers(databaseCommand);
+
+                    databaseCommand.DbCommand.OpenConnection();
+                    dbDataReader = databaseCommand.DbCommand.ExecuteReader();
+                }
+                catch (Exception exception)
+                {
+                    Sequelocity.ConfigurationSettings.EventHandlers.InvokeDatabaseCommandUnhandledExceptionEventHandlers(exception, databaseCommand);
+                    throw;
+                }
+
+                var readerHasRows = false;
+                do
+                {
+                    try
+                    {
+                        readerHasRows = dbDataReader.HasRows;
+                        if (!readerHasRows)
+                        {
+                            break;
+                        }
+                    }
+                    catch (Exception exception)
+                    {
+                        Sequelocity.ConfigurationSettings.EventHandlers.InvokeDatabaseCommandUnhandledExceptionEventHandlers(exception, databaseCommand);
+                        throw;
+                    }
+
+                    var hasNextRow = false;
+                    do
+                    {
+                        T projection = default(T);
+                        try
+                        {
+                            hasNextRow = dbDataReader.Read();
+
+                            if (hasNextRow)
+                            {
+                                projection = selector.Invoke(dbDataReader);
+                            }
+                        }
+                        catch (Exception exception)
+                        {
+                            Sequelocity.ConfigurationSettings.EventHandlers.InvokeDatabaseCommandUnhandledExceptionEventHandlers(exception, databaseCommand);
+                            throw;
+                        }
+
+                        if (hasNextRow)
+                        {
+                            yield return projection;
+                        }
+                    }
+                    while (hasNextRow);
+
+                    try
+                    {
+                        dbDataReader.NextResult();
+                    }
+                    catch (Exception exception)
+                    {
+                        Sequelocity.ConfigurationSettings.EventHandlers.InvokeDatabaseCommandUnhandledExceptionEventHandlers(exception, databaseCommand);
+                        throw;
+                    }
+                }
+                while (readerHasRows);
+
+                Sequelocity.ConfigurationSettings.EventHandlers.InvokeDatabaseCommandPostExecuteEventHandlers(databaseCommand);
+            }
+            finally
+            {
+                if (dbDataReader != null)
+                {
+                    dbDataReader.Dispose();
+                }
+
+                if (keepConnectionOpen == false)
+                {
+                    databaseCommand.DbCommand.CloseAndDispose();
+                    databaseCommand.DbCommand = null;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Executes a statement against the database asynchronously and calls the <paramref name="dataRecordCallback" /> action for each record
+        /// returned.
+        /// </summary>
+        /// <remarks>
+        /// For safety the DbDataReader is returned as an IDataRecord to the callback so that callers cannot modify the current row
+        /// being read.
+        /// </remarks>
+        /// <param name="databaseCommand"><see cref="DatabaseCommand" /> instance.</param>
+        /// <param name="dataRecordCallback">Action called for each record returned.</param>
+        /// <param name="keepConnectionOpen">Optional parameter indicating whether to keep the connection open. Default is false.</param>
+        public static async Task ExecuteReaderAsync(this DatabaseCommand databaseCommand, Action<IDataRecord> dataRecordCallback, bool keepConnectionOpen = false)
+        {
+            try
+            {
+                Sequelocity.ConfigurationSettings.EventHandlers.InvokeDatabaseCommandPreExecuteEventHandlers(databaseCommand);
+
+                await databaseCommand.DbCommand.OpenConnectionAsync();
+
+                using (DbDataReader dbDataReader = await databaseCommand.DbCommand.ExecuteReaderAsync())
+                {
+                    while (dbDataReader.HasRows)
+                    {
+                        while (await dbDataReader.ReadAsync())
+                        {
+                            dataRecordCallback.Invoke(dbDataReader);
+                        }
+
+                        await dbDataReader.NextResultAsync();
+                    }
+                }
+
+                Sequelocity.ConfigurationSettings.EventHandlers.InvokeDatabaseCommandPostExecuteEventHandlers(databaseCommand);
+            }
+            catch (Exception exception)
+            {
+                Sequelocity.ConfigurationSettings.EventHandlers.InvokeDatabaseCommandUnhandledExceptionEventHandlers(exception, databaseCommand);
+
+                throw;
+            }
+            finally
+            {
+                if (keepConnectionOpen == false)
                 {
                     databaseCommand.DbCommand.CloseAndDispose();
 
@@ -1149,16 +1422,42 @@ namespace SequelocityDotNet
         /// </param>
         /// <param name="keepConnectionOpen">Optional parameter indicating whether to keep the connection open. Default is false.</param>
         /// <returns>Results mapped to a list of type <typeparamref name="T" />.</returns>
-        public static List<T> ExecuteToMap<T>( this DatabaseCommand databaseCommand, Func<IDataRecord, T> mapper, bool keepConnectionOpen = false )
+        public static List<T> ExecuteToMap<T>(this DatabaseCommand databaseCommand, Func<IDataRecord, T> mapper, bool keepConnectionOpen = false)
         {
             var list = new List<T>();
 
-            databaseCommand.ExecuteReader( reader =>
+            databaseCommand.ExecuteReader(reader =>
             {
-                T mappedObject = mapper.Invoke( reader );
+                T mappedObject = mapper.Invoke(reader);
 
-                list.Add( mappedObject );
-            }, keepConnectionOpen );
+                list.Add(mappedObject);
+            }, keepConnectionOpen);
+
+            return list;
+        }
+
+        /// <summary>
+        /// Executes a statement against a database asynchronously and maps the results to a list of type <typeparamref name="T" />
+        /// using a given mapper function supplied to the <paramref name="mapper" /> parameter.
+        /// </summary>
+        /// <typeparam name="T">The type to map the results to.</typeparam>
+        /// <param name="databaseCommand"><see cref="DatabaseCommand" /> instance.</param>
+        /// <param name="mapper">
+        /// A method that takes an <see cref="IDataRecord" /> as an argument and returns an instance of type
+        /// <typeparamref name="T" />.
+        /// </param>
+        /// <param name="keepConnectionOpen">Optional parameter indicating whether to keep the connection open. Default is false.</param>
+        /// <returns>A <see cref="Task{TResult}"/> resulting in the results mapped to a list of type <typeparamref name="T" />.</returns>
+        public static async Task<List<T>> ExecuteToMapAsync<T>(this DatabaseCommand databaseCommand, Func<IDataRecord, T> mapper, bool keepConnectionOpen = false)
+        {
+            var list = new List<T>();
+
+            await databaseCommand.ExecuteReaderAsync(reader =>
+            {
+                T mappedObject = mapper.Invoke(reader);
+
+                list.Add(mappedObject);
+            }, keepConnectionOpen);
 
             return list;
         }
@@ -1170,9 +1469,21 @@ namespace SequelocityDotNet
         /// <param name="databaseCommand"><see cref="DatabaseCommand" /> instance.</param>
         /// <param name="keepConnectionOpen">Optional parameter indicating whether to keep the connection open. Default is false.</param>
         /// <returns>Results mapped to a list of type <typeparamref name="T" />.</returns>
-        public static List<T> ExecuteToList<T>( this DatabaseCommand databaseCommand, bool keepConnectionOpen = false )
+        public static List<T> ExecuteToList<T>(this DatabaseCommand databaseCommand, bool keepConnectionOpen = false)
         {
-            return databaseCommand.ExecuteToMap( DataRecordMapper.Map<T>, keepConnectionOpen );
+            return databaseCommand.ExecuteToMap(DataRecordMapper.Map<T>, keepConnectionOpen);
+        }
+
+        /// <summary>
+        /// Executes a statement against a database asynchronously and maps matching column names to a list of type <typeparamref name="T" />.
+        /// </summary>
+        /// <typeparam name="T">The type to map the results to.</typeparam>
+        /// <param name="databaseCommand"><see cref="DatabaseCommand" /> instance.</param>
+        /// <param name="keepConnectionOpen">Optional parameter indicating whether to keep the connection open. Default is false.</param>
+        /// <returns>A <see cref="Task{TResult}"/> resulting in the results mapped to a list of type <typeparamref name="T" />.</returns>
+        public static Task<List<T>> ExecuteToListAsync<T>(this DatabaseCommand databaseCommand, bool keepConnectionOpen = false)
+        {
+            return databaseCommand.ExecuteToMapAsync(DataRecordMapper.Map<T>, keepConnectionOpen);
         }
 
         /// <summary>
@@ -1182,27 +1493,57 @@ namespace SequelocityDotNet
         /// <param name="databaseCommand"><see cref="DatabaseCommand" /> instance.</param>
         /// <param name="keepConnectionOpen">Optional parameter indicating whether to keep the connection open. Default is false.</param>
         /// <returns>Results mapped to a type of <typeparamref name="T" />.</returns>
-        public static T ExecuteToObject<T>( this DatabaseCommand databaseCommand, bool keepConnectionOpen = false ) where T : new()
+        public static T ExecuteToObject<T>(this DatabaseCommand databaseCommand, bool keepConnectionOpen = false) where T : new()
         {
-            return databaseCommand.ExecuteToList<T>( keepConnectionOpen ).FirstOrDefault();
+            return databaseCommand.ExecuteToList<T>(keepConnectionOpen).FirstOrDefault();
+        }
+
+        /// <summary>
+        /// Executes a statement against a database asynchronously and maps matching column names to a type of <typeparamref name="T" />.
+        /// </summary>
+        /// <typeparam name="T">The type to map the results to.</typeparam>
+        /// <param name="databaseCommand"><see cref="DatabaseCommand" /> instance.</param>
+        /// <param name="keepConnectionOpen">Optional parameter indicating whether to keep the connection open. Default is false.</param>
+        /// <returns>A <see cref="Task{TResult}"/> resulting in the results mapped to a type of <typeparamref name="T" />.</returns>
+        public static async Task<T> ExecuteToObjectAsync<T>(this DatabaseCommand databaseCommand, bool keepConnectionOpen = false) where T : new()
+        {
+            return (await databaseCommand.ExecuteToListAsync<T>(keepConnectionOpen)).FirstOrDefault();
         }
 
         /// <summary>Executes a statement against a database and maps the results to a list of type dynamic.</summary>
         /// <param name="databaseCommand"><see cref="DatabaseCommand" /> instance.</param>
         /// <param name="keepConnectionOpen">Optional parameter indicating whether to keep the connection open. Default is false.</param>
         /// <returns>Results mapped to a list of type dynamic.</returns>
-        public static List<dynamic> ExecuteToDynamicList( this DatabaseCommand databaseCommand, bool keepConnectionOpen = false )
+        public static List<dynamic> ExecuteToDynamicList(this DatabaseCommand databaseCommand, bool keepConnectionOpen = false)
         {
-            return databaseCommand.ExecuteToMap( DataRecordMapper.MapDynamic, keepConnectionOpen );
+            return databaseCommand.ExecuteToMap(DataRecordMapper.MapDynamic, keepConnectionOpen);
+        }
+
+        /// <summary>Executes a statement against a database asynchronously and maps the results to a list of type dynamic.</summary>
+        /// <param name="databaseCommand"><see cref="DatabaseCommand" /> instance.</param>
+        /// <param name="keepConnectionOpen">Optional parameter indicating whether to keep the connection open. Default is false.</param>
+        /// <returns>A <see cref="Task{TResult}"/> resulting in the results mapped to a list of type dynamic.</returns>
+        public static Task<List<dynamic>> ExecuteToDynamicListAsync(this DatabaseCommand databaseCommand, bool keepConnectionOpen = false)
+        {
+            return databaseCommand.ExecuteToMapAsync(DataRecordMapper.MapDynamic, keepConnectionOpen);
         }
 
         /// <summary>Executes a statement against a database and maps the result to a dynamic object.</summary>
         /// <param name="databaseCommand"><see cref="DatabaseCommand" /> instance.</param>
         /// <param name="keepConnectionOpen">Optional parameter indicating whether to keep the connection open. Default is false.</param>
         /// <returns>Result mapped to a dynamic object.</returns>
-        public static dynamic ExecuteToDynamicObject( this DatabaseCommand databaseCommand, bool keepConnectionOpen = false )
+        public static dynamic ExecuteToDynamicObject(this DatabaseCommand databaseCommand, bool keepConnectionOpen = false)
         {
-            return databaseCommand.ExecuteToDynamicList( keepConnectionOpen ).FirstOrDefault();
+            return databaseCommand.ExecuteToDynamicList(keepConnectionOpen).FirstOrDefault();
+        }
+
+        /// <summary>Executes a statement against a database asynchronously and maps the result to a dynamic object.</summary>
+        /// <param name="databaseCommand"><see cref="DatabaseCommand" /> instance.</param>
+        /// <param name="keepConnectionOpen">Optional parameter indicating whether to keep the connection open. Default is false.</param>
+        /// <returns>Result mapped to a dynamic object.</returns>
+        public static async Task<dynamic> ExecuteToDynamicObjectAsync(this DatabaseCommand databaseCommand, bool keepConnectionOpen = false)
+        {
+            return (await databaseCommand.ExecuteToDynamicListAsync(keepConnectionOpen)).FirstOrDefault();
         }
 
         /// <summary>Executes a statement against a database and populates the results into a <see cref="DataSet" />.</summary>
@@ -1210,13 +1551,13 @@ namespace SequelocityDotNet
         /// <param name="keepConnectionOpen">Optional parameter indicating whether to keep the connection open. Default is false.</param>
         /// <returns>DataSet representing an in-memory cache of the result set.</returns>
         /// <exception cref="Exception">An unexpected null was returned from a call to DbProviderFactory.CreateDataAdapter().</exception>
-        public static DataSet ExecuteToDataSet( this DatabaseCommand databaseCommand, bool keepConnectionOpen = false )
+        public static DataSet ExecuteToDataSet(this DatabaseCommand databaseCommand, bool keepConnectionOpen = false)
         {
             var dataSet = new DataSet();
 
             try
             {
-                Sequelocity.ConfigurationSettings.EventHandlers.InvokeDatabaseCommandPreExecuteEventHandlers( databaseCommand );
+                Sequelocity.ConfigurationSettings.EventHandlers.InvokeDatabaseCommandPreExecuteEventHandlers(databaseCommand);
 
                 databaseCommand.DbCommand.OpenConnection();
 
@@ -1226,24 +1567,24 @@ namespace SequelocityDotNet
 
                 DbDataAdapter dataAdapter = dbProviderFactory.CreateDataAdapter();
 
-                if ( dataAdapter == null )
-                    throw new Exception( "An unexpected null was returned from a call to DbProviderFactory.CreateDataAdapter()." );
+                if (dataAdapter == null)
+                    throw new Exception("An unexpected null was returned from a call to DbProviderFactory.CreateDataAdapter().");
 
                 dataAdapter.SelectCommand = databaseCommand.DbCommand;
 
-                dataAdapter.Fill( dataSet );
+                dataAdapter.Fill(dataSet);
 
-                Sequelocity.ConfigurationSettings.EventHandlers.InvokeDatabaseCommandPostExecuteEventHandlers( databaseCommand );
+                Sequelocity.ConfigurationSettings.EventHandlers.InvokeDatabaseCommandPostExecuteEventHandlers(databaseCommand);
             }
-            catch ( Exception exception )
+            catch (Exception exception)
             {
-                Sequelocity.ConfigurationSettings.EventHandlers.InvokeDatabaseCommandUnhandledExceptionEventHandlers( exception, databaseCommand );
+                Sequelocity.ConfigurationSettings.EventHandlers.InvokeDatabaseCommandUnhandledExceptionEventHandlers(exception, databaseCommand);
 
                 throw;
             }
             finally
             {
-                if ( keepConnectionOpen == false )
+                if (keepConnectionOpen == false)
                 {
                     databaseCommand.DbCommand.CloseAndDispose();
 
@@ -1263,9 +1604,9 @@ namespace SequelocityDotNet
         /// DataTable representing an in-memory cache of the first <see cref="DataTable" /> result set from the returned
         /// <see cref="DataSet" />.
         /// </returns>
-        public static DataTable ExecuteToDataTable( this DatabaseCommand databaseCommand, bool keepConnectionOpen = false )
+        public static DataTable ExecuteToDataTable(this DatabaseCommand databaseCommand, bool keepConnectionOpen = false)
         {
-            return databaseCommand.ExecuteToDataSet( keepConnectionOpen ).Tables[0];
+            return databaseCommand.ExecuteToDataSet(keepConnectionOpen).Tables[0];
         }
 
         #endregion Execute Functions
@@ -1282,30 +1623,30 @@ namespace SequelocityDotNet
         /// <summary>Gets the types properties and fields and caches the results.</summary>
         /// <param name="type">Type.</param>
         /// <returns><see cref="OrderedDictionary"/> of lowercase member names and PropertyInfo or FieldInfo as the values.</returns>
-        public static OrderedDictionary GetPropertiesAndFields( Type type )
+        public static OrderedDictionary GetPropertiesAndFields(Type type)
         {
-            if ( PropertiesAndFieldsCache.ContainsKey( type ) )
+            if (PropertiesAndFieldsCache.ContainsKey(type))
             {
                 return PropertiesAndFieldsCache[type];
             }
 
-            var orderedDictionary = new OrderedDictionary( StringComparer.InvariantCultureIgnoreCase );
+            var orderedDictionary = new OrderedDictionary(StringComparer.InvariantCultureIgnoreCase);
 
             PropertyInfo[] properties = type.GetProperties();
 
-            foreach ( PropertyInfo propertyInfo in properties )
+            foreach (PropertyInfo propertyInfo in properties)
             {
                 orderedDictionary[propertyInfo.Name] = propertyInfo;
             }
 
             FieldInfo[] fields = type.GetFields();
 
-            foreach ( FieldInfo fieldInfo in fields )
+            foreach (FieldInfo fieldInfo in fields)
             {
                 orderedDictionary[fieldInfo.Name] = fieldInfo;
             }
 
-            PropertiesAndFieldsCache.Add( type, orderedDictionary );
+            PropertiesAndFieldsCache.Add(type, orderedDictionary);
 
             return orderedDictionary;
         }
@@ -1316,19 +1657,19 @@ namespace SequelocityDotNet
     /// </summary>
     public static class DbConnectionExtensions
     {
-        static readonly PropertyInfo ProviderFactoryPropertyInfo = typeof( DbConnection ).GetProperty( "ProviderFactory", BindingFlags.Instance | BindingFlags.NonPublic );
+        static readonly PropertyInfo ProviderFactoryPropertyInfo = typeof(DbConnection).GetProperty("ProviderFactory", BindingFlags.Instance | BindingFlags.NonPublic);
 
         /// <summary>
         /// Gets the database provider factory for the given <see cref="DbConnection"/>.
         /// </summary>
         /// <param name="dbConnection">The database connection.</param>
         /// <returns><see cref="DbProviderFactory"/>.</returns>
-        public static DbProviderFactory GetDbProviderFactory( this DbConnection dbConnection )
+        public static DbProviderFactory GetDbProviderFactory(this DbConnection dbConnection)
         {
             // Note that in .NET v4.5 we could use this new method instead which would avoid the reflection:
             // DbProviderFactory dbProviderFactory = DbProviderFactories.GetFactory( databaseCommand.DbCommand.Connection );
 
-            return (DbProviderFactory)ProviderFactoryPropertyInfo.GetValue( dbConnection, null );
+            return (DbProviderFactory)ProviderFactoryPropertyInfo.GetValue(dbConnection, null);
         }
     }
 
@@ -1345,9 +1686,9 @@ namespace SequelocityDotNet
         /// <summary>Gets the default value for the given type.</summary>
         /// <param name="type">Type to get the default value for.</param>
         /// <returns>Default value of the given type.</returns>
-        public static object GetDefaultValue( this Type type )
+        public static object GetDefaultValue(this Type type)
         {
-            return type.IsValueType ? GetDefaultValueCache.GetOrAdd( type, Activator.CreateInstance ) : null;
+            return type.IsValueType ? GetDefaultValueCache.GetOrAdd(type, Activator.CreateInstance) : null;
         }
     }
 
@@ -1368,113 +1709,113 @@ namespace SequelocityDotNet
         /// Thrown when an error occurs attempting to convert a value to a
         /// type.
         /// </exception>
-        public static T ConvertTo<T>( this object obj )
+        public static T ConvertTo<T>(this object obj)
         {
-            return (T)TypeConverter.ConvertType( obj, typeof( T ) );
+            return (T)TypeConverter.ConvertType(obj, typeof(T));
         }
 
         /// <summary>Converts the given object to an <see cref="int" />.</summary>
         /// <param name="obj">Object to convert.</param>
         /// <returns>Int representation of the object.</returns>
-        public static int ToInt( this object obj )
+        public static int ToInt(this object obj)
         {
-            return ConvertTo<int>( obj );
+            return ConvertTo<int>(obj);
         }
 
         /// <summary>Converts the given object to an <see cref="int" />.</summary>
         /// <param name="obj">Object to convert.</param>
         /// <returns>Int representation of the object.</returns>
-        public static int? ToNullableInt( this object obj )
+        public static int? ToNullableInt(this object obj)
         {
-            return ConvertTo<int?>( obj );
+            return ConvertTo<int?>(obj);
         }
 
         /// <summary>Converts the given object to an <see cref="long" />.</summary>
         /// <param name="obj">Object to convert.</param>
         /// <returns>Long representation of the object.</returns>
-        public static long ToLong( this object obj )
+        public static long ToLong(this object obj)
         {
-            return ConvertTo<long>( obj );
+            return ConvertTo<long>(obj);
         }
 
         /// <summary>Converts the given object to an <see cref="long" />.</summary>
         /// <param name="obj">Object to convert.</param>
         /// <returns>Long representation of the object.</returns>
-        public static long? ToNullableLong( this object obj )
+        public static long? ToNullableLong(this object obj)
         {
-            return ConvertTo<long?>( obj );
+            return ConvertTo<long?>(obj);
         }
 
         /// <summary>Converts the given object to an <see cref="double" />.</summary>
         /// <param name="obj">Object to convert.</param>
         /// <returns>Double representation of the object.</returns>
-        public static double ToDouble( this object obj )
+        public static double ToDouble(this object obj)
         {
-            return ConvertTo<double>( obj );
+            return ConvertTo<double>(obj);
         }
 
         /// <summary>Converts the given object to an <see cref="double" />.</summary>
         /// <param name="obj">Object to convert.</param>
         /// <returns>Double representation of the object.</returns>
-        public static double? ToNullableDouble( this object obj )
+        public static double? ToNullableDouble(this object obj)
         {
-            return ConvertTo<double?>( obj );
+            return ConvertTo<double?>(obj);
         }
 
         /// <summary>Converts the given object to an <see cref="decimal" />.</summary>
         /// <param name="obj">Object to convert.</param>
         /// <returns>Decimal representation of the object.</returns>
-        public static decimal ToDecimal( this object obj )
+        public static decimal ToDecimal(this object obj)
         {
-            return ConvertTo<decimal>( obj );
+            return ConvertTo<decimal>(obj);
         }
 
         /// <summary>Converts the given object to an <see cref="decimal" />.</summary>
         /// <param name="obj">Object to convert.</param>
         /// <returns>Decimal representation of the object.</returns>
-        public static decimal? ToNullableDecimal( this object obj )
+        public static decimal? ToNullableDecimal(this object obj)
         {
-            return ConvertTo<decimal?>( obj );
+            return ConvertTo<decimal?>(obj);
         }
 
         /// <summary>Converts the given object to an <see cref="DateTime" />.</summary>
         /// <param name="obj">Object to convert.</param>
         /// <returns>DateTime representation of the object.</returns>
-        public static DateTime ToDateTime( this object obj )
+        public static DateTime ToDateTime(this object obj)
         {
-            return ConvertTo<DateTime>( obj );
+            return ConvertTo<DateTime>(obj);
         }
 
         /// <summary>Converts the given object to an <see cref="DateTime" />.</summary>
         /// <param name="obj">Object to convert.</param>
         /// <returns>DateTime representation of the object.</returns>
-        public static DateTime? ToNullableDateTime( this object obj )
+        public static DateTime? ToNullableDateTime(this object obj)
         {
-            return ConvertTo<DateTime?>( obj );
+            return ConvertTo<DateTime?>(obj);
         }
 
         /// <summary>Converts the given object to an <see cref="bool" />.</summary>
         /// <param name="obj">Object to convert.</param>
         /// <returns>Bool representation of the object.</returns>
-        public static bool ToBool( this object obj )
+        public static bool ToBool(this object obj)
         {
-            return ConvertTo<bool>( obj );
+            return ConvertTo<bool>(obj);
         }
 
         /// <summary>Converts the given object to an <see cref="bool" />.</summary>
         /// <param name="obj">Object to convert.</param>
         /// <returns>Bool representation of the object.</returns>
-        public static bool? ToNullableBool( this object obj )
+        public static bool? ToNullableBool(this object obj)
         {
-            return ConvertTo<bool?>( obj );
+            return ConvertTo<bool?>(obj);
         }
 
         /// <summary>Indicates if the object is an anonymous type.</summary>
         /// <param name="obj">Object instance.</param>
         /// <returns>Returns true if the object is an anonymous type.</returns>
-        public static bool IsAnonymousType( this object obj )
+        public static bool IsAnonymousType(this object obj)
         {
-            if ( obj == null )
+            if (obj == null)
                 return false;
 
             return obj.GetType().Namespace == null;
@@ -1490,54 +1831,54 @@ namespace SequelocityDotNet
         /// <returns>Converted value.</returns>
         /// <exception cref="TypeConversionException">Thrown when an error occurs attempting to convert a value to an enum.</exception>
         /// <exception cref="TypeConversionException">Thrown when an error occurs attempting to convert a value to a type.</exception>
-        public static object ConvertType( object value, Type type )
+        public static object ConvertType(object value, Type type)
         {
             // Handle DBNull
-            if ( value == DBNull.Value )
+            if (value == DBNull.Value)
                 value = null;
 
             // Handle value type conversion of null to the values types default value
-            if ( value == null && type.IsValueType )
+            if (value == null && type.IsValueType)
                 return type.GetDefaultValue(); // Extension method internally handles caching
 
-            Type underlyingType = Nullable.GetUnderlyingType( type ) ?? type;
+            Type underlyingType = Nullable.GetUnderlyingType(type) ?? type;
 
             // Handle Enums
-            if ( underlyingType.IsEnum )
+            if (underlyingType.IsEnum)
             {
                 try
                 {
                     // ReSharper disable once PossibleNullReferenceException // Because an enum and a nullable enum are both value types, it's actually not possible to reach the next line of code when the value variable is null
-                    value = Enum.Parse( underlyingType, value.ToString(), true );
+                    value = Enum.Parse(underlyingType, value.ToString(), true);
                 }
-                catch ( Exception exception )
+                catch (Exception exception)
                 {
-                    throw new TypeConversionException( String.Format( "An error occurred while attempting to convert the value '{0}' to an enum of type '{1}'", value, underlyingType ), exception );
+                    throw new TypeConversionException(String.Format("An error occurred while attempting to convert the value '{0}' to an enum of type '{1}'", value, underlyingType), exception);
                 }
             }
 
             try
             {
                 // Handle Guids
-                if ( underlyingType == typeof( Guid ) )
+                if (underlyingType == typeof(Guid))
                 {
-                    if ( value is string )
+                    if (value is string)
                     {
-                        value = new Guid( value as string );
+                        value = new Guid(value as string);
                     }
-                    if ( value is byte[] )
+                    if (value is byte[])
                     {
-                        value = new Guid( value as byte[] );
+                        value = new Guid(value as byte[]);
                     }
                 }
 
-                object result = Convert.ChangeType( value, underlyingType );
+                object result = Convert.ChangeType(value, underlyingType);
 
                 return result;
             }
-            catch ( Exception exception )
+            catch (Exception exception)
             {
-                throw new TypeConversionException( String.Format( "An error occurred while attempting to convert the value '{0}' to type '{1}'", value, underlyingType ), exception );
+                throw new TypeConversionException(String.Format("An error occurred while attempting to convert the value '{0}' to type '{1}'", value, underlyingType), exception);
             }
         }
 
@@ -1551,8 +1892,8 @@ namespace SequelocityDotNet
             /// The exception that is the cause of the current exception, or a null reference (Nothing in Visual Basic) if no inner
             /// exception is specified.
             /// </param>
-            public TypeConversionException( string message, Exception innerException )
-                : base( message, innerException )
+            public TypeConversionException(string message, Exception innerException)
+                : base(message, innerException)
             {
             }
         }
@@ -1571,16 +1912,16 @@ namespace SequelocityDotNet
         /// property.
         /// </exception>
         /// <exception cref="FieldSetValueException">Thrown when an error occurs when attempting to assign a value to a field.</exception>
-        public static T Map<T>( this IDataRecord dataRecord )
+        public static T Map<T>(this IDataRecord dataRecord)
         {
-            Type type = typeof( T );
+            Type type = typeof(T);
 
             int fieldCount = dataRecord.FieldCount;
 
             // Handle mapping to primitives and strings when there is only a single field in the record
-            if ( fieldCount == 1 && ( type.IsPrimitive || type == typeof( string ) ) )
+            if (fieldCount == 1 && (type.IsPrimitive || type == typeof(string)))
             {
-                object convertedValue = TypeConverter.ConvertType( dataRecord.GetValue( 0 ), type );
+                object convertedValue = TypeConverter.ConvertType(dataRecord.GetValue(0), type);
 
                 return (T)convertedValue;
             }
@@ -1590,64 +1931,64 @@ namespace SequelocityDotNet
             bool didAssignValues = false;
 
             // OrderedDictionary where the key is a case-insensitive property or field name and the value is the members corresponding PropertyInfo or FieldInfo
-            OrderedDictionary orderedDictionary = TypeCacher.GetPropertiesAndFields( type );
+            OrderedDictionary orderedDictionary = TypeCacher.GetPropertiesAndFields(type);
 
-            for ( int i = 0; i < fieldCount; i++ )
+            for (int i = 0; i < fieldCount; i++)
             {
-                string dataRecordFieldName = dataRecord.GetName( i ).ToLower();
+                string dataRecordFieldName = dataRecord.GetName(i).ToLower();
 
                 object memberInfo = orderedDictionary[dataRecordFieldName];
 
-                if ( memberInfo != null )
+                if (memberInfo != null)
                 {
-                    if ( memberInfo is PropertyInfo )
+                    if (memberInfo is PropertyInfo)
                     {
                         var propertyInfo = memberInfo as PropertyInfo;
 
-                        if ( propertyInfo.CanWrite )
+                        if (propertyInfo.CanWrite)
                         {
-                            object value = dataRecord.GetValue( i );
+                            object value = dataRecord.GetValue(i);
 
-                            object convertedValue = TypeConverter.ConvertType( value, propertyInfo.PropertyType );
+                            object convertedValue = TypeConverter.ConvertType(value, propertyInfo.PropertyType);
 
                             try
                             {
-                                propertyInfo.SetValue( mappedObject, convertedValue, null );
+                                propertyInfo.SetValue(mappedObject, convertedValue, null);
 
                                 didAssignValues = true;
                             }
-                            catch ( Exception exception )
+                            catch (Exception exception)
                             {
-                                throw new PropertySetValueException( string.Format( "An error occurred while attempting to assign the value '{0}' to property '{1}' of type '{2}' on class type {3}", value, propertyInfo.Name, propertyInfo.PropertyType, type ), exception );
+                                throw new PropertySetValueException(string.Format("An error occurred while attempting to assign the value '{0}' to property '{1}' of type '{2}' on class type {3}", value, propertyInfo.Name, propertyInfo.PropertyType, type), exception);
                             }
                         }
                     }
-                    else if ( memberInfo is FieldInfo )
+                    else if (memberInfo is FieldInfo)
                     {
                         var fieldInfo = memberInfo as FieldInfo;
 
-                        object value = dataRecord.GetValue( i );
+                        object value = dataRecord.GetValue(i);
 
-                        object convertedValue = TypeConverter.ConvertType( value, fieldInfo.FieldType );
+                        object convertedValue = TypeConverter.ConvertType(value, fieldInfo.FieldType);
 
                         try
                         {
-                            fieldInfo.SetValue( mappedObject, convertedValue );
+                            fieldInfo.SetValue(mappedObject, convertedValue);
 
                             didAssignValues = true;
                         }
-                        catch ( Exception exception )
+                        catch (Exception exception)
                         {
-                            throw new FieldSetValueException( string.Format( "An error occurred while attempting to assign the value '{0}' to field '{1}' of type '{2}' on class type {3}", value, fieldInfo.Name, fieldInfo.FieldType, type ), exception );
+                            throw new FieldSetValueException(string.Format("An error occurred while attempting to assign the value '{0}' to field '{1}' of type '{2}' on class type {3}", value, fieldInfo.Name, fieldInfo.FieldType, type), exception);
                         }
                     }
                 }
             }
 
             // If no values were assigned, attempt to map the value directly to the type
-            if ( didAssignValues == false && fieldCount == 1 )
+            if (didAssignValues == false && fieldCount == 1)
             {
-                object convertedValue = TypeConverter.ConvertType( dataRecord.GetValue( 0 ), type );
+                object convertedValue = TypeConverter.ConvertType(dataRecord.GetValue(0), type);
 
                 mappedObject = (T)convertedValue;
             }
@@ -1658,17 +1999,17 @@ namespace SequelocityDotNet
         /// <summary>Maps an <see cref="IDataRecord" /> to a type of dynamic object.</summary>
         /// <param name="dataRecord">The <see cref="IDataRecord" /> to map from.</param>
         /// <returns>A dynamic object.</returns>
-        public static dynamic MapDynamic( this IDataRecord dataRecord )
+        public static dynamic MapDynamic(this IDataRecord dataRecord)
         {
             dynamic obj = new DynamicDictionary();
 
-            for ( int i = 0; i < dataRecord.FieldCount; i++ )
+            for (int i = 0; i < dataRecord.FieldCount; i++)
             {
-                string dataRecordFieldName = dataRecord.GetName( i );
+                string dataRecordFieldName = dataRecord.GetName(i);
 
-                object dataRecordFieldValue = dataRecord.GetValue( i );
+                object dataRecordFieldValue = dataRecord.GetValue(i);
 
-                if ( dataRecordFieldValue == DBNull.Value )
+                if (dataRecordFieldValue == DBNull.Value)
                     dataRecordFieldValue = null;
 
                 obj[dataRecordFieldName] = dataRecordFieldValue;
@@ -1687,8 +2028,8 @@ namespace SequelocityDotNet
             /// The exception that is the cause of the current exception, or a null reference (Nothing in Visual Basic) if no inner
             /// exception is specified.
             /// </param>
-            public FieldSetValueException( string message, Exception innerException )
-                : base( message, innerException )
+            public FieldSetValueException(string message, Exception innerException)
+                : base(message, innerException)
             {
             }
         }
@@ -1703,8 +2044,8 @@ namespace SequelocityDotNet
             /// The exception that is the cause of the current exception, or a null reference (Nothing in Visual Basic) if no inner
             /// exception is specified.
             /// </param>
-            public PropertySetValueException( string message, Exception innerException )
-                : base( message, innerException )
+            public PropertySetValueException(string message, Exception innerException)
+                : base(message, innerException)
             {
             }
         }
@@ -1719,7 +2060,7 @@ namespace SequelocityDotNet
         /// <param name="dbCommand"><see cref="DbCommand" /> instance.</param>
         /// <param name="commandText">The text command to run against the data source.</param>
         /// <returns>The given <see cref="DbCommand" /> instance.</returns>
-        public static DbCommand SetCommandText( this DbCommand dbCommand, string commandText )
+        public static DbCommand SetCommandText(this DbCommand dbCommand, string commandText)
         {
             dbCommand.CommandText = commandText;
 
@@ -1730,7 +2071,7 @@ namespace SequelocityDotNet
         /// <param name="dbCommand"><see cref="DbCommand" /> instance.</param>
         /// <param name="commandText">Text command to append to the text command to run against the data source.</param>
         /// <returns>The given <see cref="DbCommand" /> instance.</returns>
-        public static DbCommand AppendCommandText( this DbCommand dbCommand, string commandText )
+        public static DbCommand AppendCommandText(this DbCommand dbCommand, string commandText)
         {
             dbCommand.CommandText += commandText;
 
@@ -1742,7 +2083,7 @@ namespace SequelocityDotNet
         /// <param name="parameterName">Parameter name.</param>
         /// <param name="parameterValue">Parameter value.</param>
         /// <returns><see cref="DbParameter" />.</returns>
-        public static DbParameter CreateParameter( this DbCommand dbCommand, string parameterName, object parameterValue )
+        public static DbParameter CreateParameter(this DbCommand dbCommand, string parameterName, object parameterValue)
         {
             DbParameter parameter = dbCommand.CreateParameter();
 
@@ -1759,7 +2100,7 @@ namespace SequelocityDotNet
         /// <param name="parameterValue">Parameter value.</param>
         /// <param name="dbType">Parameter type.</param>
         /// <returns><see cref="DbParameter" />.</returns>
-        public static DbParameter CreateParameter( this DbCommand dbCommand, string parameterName, object parameterValue, DbType dbType )
+        public static DbParameter CreateParameter(this DbCommand dbCommand, string parameterName, object parameterValue, DbType dbType)
         {
             DbParameter parameter = dbCommand.CreateParameter();
 
@@ -1781,7 +2122,7 @@ namespace SequelocityDotNet
         /// <param name="dbType">Parameter type.</param>
         /// <param name="parameterDirection">Parameter direction.</param>
         /// <returns><see cref="DbParameter" />.</returns>
-        public static DbParameter CreateParameter( this DbCommand dbCommand, string parameterName, object parameterValue, DbType dbType, ParameterDirection parameterDirection )
+        public static DbParameter CreateParameter(this DbCommand dbCommand, string parameterName, object parameterValue, DbType dbType, ParameterDirection parameterDirection)
         {
             DbParameter parameter = dbCommand.CreateParameter();
 
@@ -1801,14 +2142,14 @@ namespace SequelocityDotNet
         /// <param name="dbParameter"><see cref="DbParameter" /> to add.</param>
         /// <returns>The given <see cref="DbCommand" /> instance.</returns>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="dbParameter" /> parameter is null.</exception>
-        public static DbCommand AddParameter( this DbCommand dbCommand, DbParameter dbParameter )
+        public static DbCommand AddParameter(this DbCommand dbCommand, DbParameter dbParameter)
         {
-            if ( dbParameter == null )
+            if (dbParameter == null)
             {
-                throw new ArgumentNullException( "dbParameter" );
+                throw new ArgumentNullException("dbParameter");
             }
 
-            dbCommand.Parameters.Add( dbParameter );
+            dbCommand.Parameters.Add(dbParameter);
 
             return dbCommand;
         }
@@ -1819,21 +2160,16 @@ namespace SequelocityDotNet
         /// <param name="parameterValue">Parameter value.</param>
         /// <returns>The given <see cref="DbCommand" /> instance.</returns>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="parameterName" /> parameter is null.</exception>
-        public static DbCommand AddParameter( this DbCommand dbCommand, string parameterName, object parameterValue )
+        public static DbCommand AddParameter(this DbCommand dbCommand, string parameterName, object parameterValue)
         {
-            if ( String.IsNullOrWhiteSpace( parameterName ) )
+            if (String.IsNullOrWhiteSpace(parameterName))
             {
-                throw new ArgumentNullException( "parameterName" );
+                throw new ArgumentNullException("parameterName");
             }
 
-            if ( parameterValue == null )
-            {
-                parameterValue = DBNull.Value;
-            }
+            DbParameter parameter = dbCommand.CreateParameter(parameterName, parameterValue);
 
-            DbParameter parameter = dbCommand.CreateParameter( parameterName, parameterValue );
-
-            dbCommand.Parameters.Add( parameter );
+            dbCommand.Parameters.Add(parameter);
 
             return dbCommand;
         }
@@ -1845,21 +2181,38 @@ namespace SequelocityDotNet
         /// <param name="dbType">Parameter type.</param>
         /// <returns>The given <see cref="DbCommand" /> instance.</returns>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="parameterName" /> parameter is null.</exception>
-        public static DbCommand AddParameter( this DbCommand dbCommand, string parameterName, object parameterValue, DbType dbType )
+        public static DbCommand AddParameter(this DbCommand dbCommand, string parameterName, object parameterValue, DbType dbType)
         {
-            if ( String.IsNullOrWhiteSpace( parameterName ) )
+            if (String.IsNullOrWhiteSpace(parameterName))
             {
-                throw new ArgumentNullException( "parameterName" );
+                throw new ArgumentNullException("parameterName");
             }
 
-            if ( parameterValue == null ) 
+            DbParameter parameter = dbCommand.CreateParameter(parameterName, parameterValue, dbType);
+
+            dbCommand.Parameters.Add(parameter);
+
+            return dbCommand;
+        }
+
+        /// <summary>Adds a parameter whose default value is <see cref="DBNull" /> when unassigned, to the <see cref="DbCommand" />.</summary>
+        /// <param name="dbCommand"><see cref="DbCommand" /> instance.</param>
+        /// <param name="parameterName">Parameter name.</param>
+        /// <param name="parameterValue">Parameter value.</param>
+        /// <param name="dbType">Parameter type.</param>
+        /// <returns>The given <see cref="DbCommand" /> instance.</returns>
+        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="parameterName" /> parameter is null.</exception>
+        public static DbCommand AddNullableParameter(this DbCommand dbCommand, string parameterName, object parameterValue, DbType dbType)
+        {
+            if (parameterValue is string
+                 && string.IsNullOrEmpty(parameterValue.ToString()))
             {
-                parameterValue = DBNull.Value;
+                parameterValue = null;
             }
 
-            DbParameter parameter = dbCommand.CreateParameter( parameterName, parameterValue, dbType );
-
-            dbCommand.Parameters.Add( parameter );
+            dbCommand = parameterValue == null
+                ? dbCommand.AddParameter(parameterName, DBNull.Value)
+                : dbCommand.AddParameter(parameterName, parameterValue, dbType);
 
             return dbCommand;
         }
@@ -1868,11 +2221,11 @@ namespace SequelocityDotNet
         /// <param name="dbCommand"><see cref="DbCommand" /> instance.</param>
         /// <param name="dbParameters">List of database parameters.</param>
         /// <returns>The given <see cref="DbCommand" /> instance.</returns>
-        public static DbCommand AddParameters( this DbCommand dbCommand, IEnumerable<DbParameter> dbParameters )
+        public static DbCommand AddParameters(this DbCommand dbCommand, IEnumerable<DbParameter> dbParameters)
         {
-            foreach ( DbParameter dbParameter in dbParameters )
+            foreach (DbParameter dbParameter in dbParameters)
             {
-                dbCommand.AddParameter( dbParameter );
+                dbCommand.AddParameter(dbParameter);
             }
 
             return dbCommand;
@@ -1882,11 +2235,11 @@ namespace SequelocityDotNet
         /// <param name="dbCommand"><see cref="DbCommand" /> instance.</param>
         /// <param name="dbParameters">Parameter array of database parameters.</param>
         /// <returns>The given <see cref="DbCommand" /> instance.</returns>
-        public static DbCommand AddParameters( this DbCommand dbCommand, params DbParameter[] dbParameters )
+        public static DbCommand AddParameters(this DbCommand dbCommand, params DbParameter[] dbParameters)
         {
-            foreach ( DbParameter dbParameter in dbParameters )
+            foreach (DbParameter dbParameter in dbParameters)
             {
-                dbCommand.AddParameter( dbParameter );
+                dbCommand.AddParameter(dbParameter);
             }
 
             return dbCommand;
@@ -1900,16 +2253,16 @@ namespace SequelocityDotNet
         /// Thrown when the <paramref name="parameterNameAndValueDictionary" /> parameter
         /// is null.
         /// </exception>
-        public static DbCommand AddParameters( this DbCommand dbCommand, IDictionary<string, object> parameterNameAndValueDictionary )
+        public static DbCommand AddParameters(this DbCommand dbCommand, IDictionary<string, object> parameterNameAndValueDictionary)
         {
-            if ( parameterNameAndValueDictionary == null )
+            if (parameterNameAndValueDictionary == null)
             {
-                throw new ArgumentNullException( "parameterNameAndValueDictionary" );
+                throw new ArgumentNullException("parameterNameAndValueDictionary");
             }
 
-            foreach ( var parameterNameAndValue in parameterNameAndValueDictionary )
+            foreach (var parameterNameAndValue in parameterNameAndValueDictionary)
             {
-                dbCommand.AddParameter( parameterNameAndValue.Key, parameterNameAndValue.Value );
+                dbCommand.AddParameter(parameterNameAndValue.Key, parameterNameAndValue.Value);
             }
 
             return dbCommand;
@@ -1935,49 +2288,49 @@ namespace SequelocityDotNet
         /// Thrown when the <paramref name="dbCommand" /> CommandText does not contain the
         /// <paramref name="parameterName" />.
         /// </exception>
-        public static DbCommand AddParameters<T>( this DbCommand dbCommand, string parameterName, List<T> parameterValues )
+        public static DbCommand AddParameters<T>(this DbCommand dbCommand, string parameterName, List<T> parameterValues)
         {
-            if ( String.IsNullOrWhiteSpace( parameterName ) )
+            if (String.IsNullOrWhiteSpace(parameterName))
             {
-                throw new ArgumentNullException( "parameterName" );
+                throw new ArgumentNullException("parameterName");
             }
 
-            if ( parameterValues == null )
+            if (parameterValues == null)
             {
-                throw new ArgumentNullException( "parameterValues" );
+                throw new ArgumentNullException("parameterValues");
             }
 
-            if ( parameterValues.Count == 0 )
+            if (parameterValues.Count == 0)
             {
-                throw new Exception( "Parameter values list is empty." );
+                throw new Exception("Parameter values list is empty.");
             }
 
-            if ( String.IsNullOrWhiteSpace( dbCommand.CommandText ) )
+            if (String.IsNullOrWhiteSpace(dbCommand.CommandText))
             {
-                throw new Exception( "The CommandText must already be set before calling this method." );
+                throw new Exception("The CommandText must already be set before calling this method.");
             }
 
-            if ( dbCommand.CommandText.Contains( parameterName ) == false )
+            if (dbCommand.CommandText.Contains(parameterName) == false)
             {
-                throw new Exception( string.Format( "The CommandText does not contain the parameter name '{0}'", parameterName ) );
+                throw new Exception(string.Format("The CommandText does not contain the parameter name '{0}'", parameterName));
             }
 
             var parameterNames = new List<string>();
 
-            foreach ( T parameterValue in parameterValues )
+            foreach (T parameterValue in parameterValues)
             {
                 // Note that we are appending the ordinal parameter position as a suffix to the parameter name in order to create
                 // some uniqueness for each parameter name as well as to aid in debugging.
                 string paramName = parameterName + "_p" + dbCommand.Parameters.Count;
 
-                parameterNames.Add( paramName );
+                parameterNames.Add(paramName);
 
-                dbCommand.AddParameter( paramName, parameterValue );
+                dbCommand.AddParameter(paramName, parameterValue);
             }
 
-            string commaDelimitedString = string.Join( ",", parameterNames );
+            string commaDelimitedString = string.Join(",", parameterNames);
 
-            dbCommand.CommandText = dbCommand.CommandText.Replace( parameterName, commaDelimitedString );
+            dbCommand.CommandText = dbCommand.CommandText.Replace(parameterName, commaDelimitedString);
 
             return dbCommand;
         }
@@ -2003,49 +2356,49 @@ namespace SequelocityDotNet
         /// Thrown when the <paramref name="dbCommand" /> CommandText does not contain the
         /// <paramref name="parameterName" />.
         /// </exception>
-        public static DbCommand AddParameters<T>( this DbCommand dbCommand, string parameterName, List<T> parameterValues, DbType dbType )
+        public static DbCommand AddParameters<T>(this DbCommand dbCommand, string parameterName, List<T> parameterValues, DbType dbType)
         {
-            if ( String.IsNullOrWhiteSpace( parameterName ) )
+            if (String.IsNullOrWhiteSpace(parameterName))
             {
-                throw new ArgumentNullException( "parameterName" );
+                throw new ArgumentNullException("parameterName");
             }
 
-            if ( parameterValues == null )
+            if (parameterValues == null)
             {
-                throw new ArgumentNullException( "parameterValues" );
+                throw new ArgumentNullException("parameterValues");
             }
 
-            if ( parameterValues.Count == 0 )
+            if (parameterValues.Count == 0)
             {
-                throw new Exception( "Parameter values list is empty." );
+                throw new Exception("Parameter values list is empty.");
             }
 
-            if ( String.IsNullOrWhiteSpace( dbCommand.CommandText ) )
+            if (String.IsNullOrWhiteSpace(dbCommand.CommandText))
             {
-                throw new Exception( "The CommandText must already be set before calling this method." );
+                throw new Exception("The CommandText must already be set before calling this method.");
             }
 
-            if ( dbCommand.CommandText.Contains( parameterName ) == false )
+            if (dbCommand.CommandText.Contains(parameterName) == false)
             {
-                throw new Exception( string.Format( "The CommandText does not contain the parameter name '{0}'", parameterName ) );
+                throw new Exception(string.Format("The CommandText does not contain the parameter name '{0}'", parameterName));
             }
 
             var parameterNames = new List<string>();
 
-            foreach ( T parameterValue in parameterValues )
+            foreach (T parameterValue in parameterValues)
             {
                 // Note that we are appending the ordinal parameter position as a suffix to the parameter name in order to create
                 // some uniqueness for each parameter name as well as to aid in debugging.
                 string paramName = parameterName + "_p" + dbCommand.Parameters.Count;
 
-                parameterNames.Add( paramName );
+                parameterNames.Add(paramName);
 
-                dbCommand.AddParameter( paramName, parameterValue, dbType );
+                dbCommand.AddParameter(paramName, parameterValue, dbType);
             }
 
-            string commaDelimitedString = string.Join( ",", parameterNames );
+            string commaDelimitedString = string.Join(",", parameterNames);
 
-            dbCommand.CommandText = dbCommand.CommandText.Replace( parameterName, commaDelimitedString );
+            dbCommand.CommandText = dbCommand.CommandText.Replace(parameterName, commaDelimitedString);
 
             return dbCommand;
         }
@@ -2054,7 +2407,7 @@ namespace SequelocityDotNet
         /// <param name="dbCommand"><see cref="DbCommand" /> instance.</param>
         /// <param name="commandType">CommandType which specifies how a command string is interpreted.</param>
         /// <returns>The given <see cref="DatabaseCommand" /> instance.</returns>
-        public static DbCommand SetCommandType( this DbCommand dbCommand, CommandType commandType )
+        public static DbCommand SetCommandType(this DbCommand dbCommand, CommandType commandType)
         {
             dbCommand.CommandType = commandType;
 
@@ -2067,7 +2420,7 @@ namespace SequelocityDotNet
         /// <param name="dbCommand"><see cref="DbCommand" /> instance.</param>
         /// <param name="commandTimeoutSeconds">The time in seconds to wait for the command to execute. The default is 30 seconds.</param>
         /// <returns>The given <see cref="DbCommand" /> instance.</returns>
-        public static DbCommand SetCommandTimeout( this DbCommand dbCommand, int commandTimeoutSeconds )
+        public static DbCommand SetCommandTimeout(this DbCommand dbCommand, int commandTimeoutSeconds)
         {
             dbCommand.CommandTimeout = commandTimeoutSeconds;
 
@@ -2078,7 +2431,7 @@ namespace SequelocityDotNet
         /// <param name="dbCommand"><see cref="DbCommand" /> instance.</param>
         /// <param name="dbTransaction">The transaction to associate with the command.</param>
         /// <returns>The given <see cref="DbCommand" /> instance.</returns>
-        public static DbCommand SetTransaction( this DbCommand dbCommand, DbTransaction dbTransaction )
+        public static DbCommand SetTransaction(this DbCommand dbCommand, DbTransaction dbTransaction)
         {
             dbCommand.Transaction = dbTransaction;
 
@@ -2090,13 +2443,13 @@ namespace SequelocityDotNet
         /// </summary>
         /// <param name="dbCommand"><see cref="DbCommand" /> instance.</param>
         /// <returns>An object representing the new transaction.</returns>
-        public static DbTransaction BeginTransaction( this DbCommand dbCommand )
+        public static DbTransaction BeginTransaction(this DbCommand dbCommand)
         {
             dbCommand.OpenConnection();
 
             DbTransaction transaction = dbCommand.Connection.BeginTransaction();
 
-            dbCommand.SetTransaction( transaction );
+            dbCommand.SetTransaction(transaction);
 
             return transaction;
         }
@@ -2107,13 +2460,13 @@ namespace SequelocityDotNet
         /// <param name="dbCommand"><see cref="DbCommand" /> instance.</param>
         /// <param name="isolationLevel">Specifies the isolation level for the transaction.</param>
         /// <returns>An object representing the new transaction.</returns>
-        public static DbTransaction BeginTransaction( this DbCommand dbCommand, IsolationLevel isolationLevel )
+        public static DbTransaction BeginTransaction(this DbCommand dbCommand, IsolationLevel isolationLevel)
         {
             dbCommand.OpenConnection();
 
-            DbTransaction transaction = dbCommand.Connection.BeginTransaction( isolationLevel );
+            DbTransaction transaction = dbCommand.Connection.BeginTransaction(isolationLevel);
 
-            dbCommand.SetTransaction( transaction );
+            dbCommand.SetTransaction(transaction);
 
             return transaction;
         }
@@ -2121,11 +2474,24 @@ namespace SequelocityDotNet
         /// <summary>Opens a database connection.</summary>
         /// <param name="dbCommand"><see cref="DbCommand" /> instance.</param>
         /// <returns>The given <see cref="DbCommand" /> instance.</returns>
-        public static DbCommand OpenConnection( this DbCommand dbCommand )
+        public static DbCommand OpenConnection(this DbCommand dbCommand)
         {
-            if ( dbCommand.Connection.State != ConnectionState.Open )
+            if (dbCommand.Connection.State != ConnectionState.Open)
             {
                 dbCommand.Connection.Open();
+            }
+
+            return dbCommand;
+        }
+
+        /// <summary>Opens a database connection asynchronously.</summary>
+        /// <param name="dbCommand"><see cref="DbCommand" /> instance.</param>
+        /// <returns>A <see cref="Task{TResult}"/> resulting in the given <see cref="DbCommand" /> instance.</returns>
+        public static async Task<DbCommand> OpenConnectionAsync(this DbCommand dbCommand)
+        {
+            if (dbCommand.Connection.State != ConnectionState.Open)
+            {
+                await dbCommand.Connection.OpenAsync();
             }
 
             return dbCommand;
@@ -2135,7 +2501,7 @@ namespace SequelocityDotNet
         /// Closes and disposes the <see cref="DbCommand.Connection" /> and the <see cref="DbCommand" /> itself.
         /// </summary>
         /// <param name="dbCommand"><see cref="DbCommand" /> instance.</param>
-        public static void CloseAndDispose( this DbCommand dbCommand )
+        public static void CloseAndDispose(this DbCommand dbCommand)
         {
             dbCommand.Connection.Close();
 
@@ -2147,15 +2513,15 @@ namespace SequelocityDotNet
         /// <summary>Gets the command text with the parameters replaced with their values.</summary>
         /// <param name="dbCommand"><see cref="DbCommand" /> instance.</param>
         /// <returns>Parameter replaced command text.</returns>
-        public static string GetParameterReplacedCommandText( this DbCommand dbCommand )
+        public static string GetParameterReplacedCommandText(this DbCommand dbCommand)
         {
             string commandText = dbCommand.CommandText;
 
-            foreach ( DbParameter parameter in dbCommand.Parameters )
+            foreach (DbParameter parameter in dbCommand.Parameters)
             {
-                string replacementText = string.Format( "'{0}' /* {1} */", parameter.Value, parameter.ParameterName );
+                string replacementText = string.Format("'{0}' /* {1} */", parameter.Value, parameter.ParameterName);
 
-                commandText = commandText.Replace( parameter.ParameterName, replacementText );
+                commandText = commandText.Replace(parameter.ParameterName, replacementText);
             }
 
             return commandText;
@@ -2167,30 +2533,30 @@ namespace SequelocityDotNet
         /// </summary>
         /// <param name="dbCommand"><see cref="DbCommand" /> instance.</param>
         /// <returns>SQL statement for debugging purposes.</returns>
-        public static string GetDebugCommandText( this DbCommand dbCommand )
+        public static string GetDebugCommandText(this DbCommand dbCommand)
         {
             var sb = new StringBuilder();
 
-            sb.AppendLine( "/******** COMMAND & CONNECTION INFO ********/" );
-            sb.AppendLine( "/*" );
-            sb.AppendLine( "Application Name: " + AppDomain.CurrentDomain.FriendlyName );
-            sb.AppendLine( "Database Server: " + dbCommand.Connection.DataSource );
-            sb.AppendLine( "Database Name: " + dbCommand.Connection.Database );
-            sb.AppendLine( "Connection String: " + dbCommand.Connection.ConnectionString );
-            sb.AppendLine( "Connection State: " + dbCommand.Connection.State );
-            sb.AppendLine( "Command Timeout: " + dbCommand.CommandTimeout + " sec." );
-            sb.AppendLine( "Command Parameter Count: " + dbCommand.Parameters.Count );
-            sb.AppendLine( "Client Machine Name: " + Environment.MachineName );
-            sb.AppendLine( "Client DNS Host Name: " + Dns.GetHostEntry( "LocalHost" ).HostName );
-            sb.AppendLine( "Current DateTime: " + DateTime.Now );
-            sb.AppendLine( "*/" );
+            sb.AppendLine("/******** COMMAND & CONNECTION INFO ********/");
+            sb.AppendLine("/*");
+            sb.AppendLine("Application Name: " + AppDomain.CurrentDomain.FriendlyName);
+            sb.AppendLine("Database Server: " + dbCommand.Connection.DataSource);
+            sb.AppendLine("Database Name: " + dbCommand.Connection.Database);
+            sb.AppendLine("Connection String: " + dbCommand.Connection.ConnectionString);
+            sb.AppendLine("Connection State: " + dbCommand.Connection.State);
+            sb.AppendLine("Command Timeout: " + dbCommand.CommandTimeout + " sec.");
+            sb.AppendLine("Command Parameter Count: " + dbCommand.Parameters.Count);
+            sb.AppendLine("Client Machine Name: " + Environment.MachineName);
+            sb.AppendLine("Client DNS Host Name: " + Dns.GetHostEntry("LocalHost").HostName);
+            sb.AppendLine("Current DateTime: " + DateTime.Now);
+            sb.AppendLine("*/");
             sb.AppendLine();
 
             string commandText = dbCommand.GetParameterReplacedCommandText();
 
-            sb.AppendLine( "/******** SQL QUERY ********/" );
+            sb.AppendLine("/******** SQL QUERY ********/");
             sb.AppendLine();
-            sb.AppendLine( commandText );
+            sb.AppendLine(commandText);
             sb.AppendLine();
 
             return sb.ToString();
@@ -2214,7 +2580,7 @@ namespace SequelocityDotNet
         /// The value of 'tableName' cannot be null when the object passed is an anonymous
         /// type.
         /// </exception>
-        public static DbCommand GenerateInsertForMySql( this DbCommand dbCommand, object obj, string tableName = null )
+        public static DbCommand GenerateInsertForMySql(this DbCommand dbCommand, object obj, string tableName = null)
         {
             const string mySqlInsertStatementTemplate = @"
 INSERT INTO {0}
@@ -2226,7 +2592,7 @@ VALUES
 SELECT LAST_INSERT_ID() AS LastInsertedId;
 "; // Intentional line break for readability of multiple inserts
 
-            return dbCommand.GenerateInsertCommand( obj, mySqlInsertStatementTemplate, tableName, KeywordEscapeMethod.Backtick );
+            return dbCommand.GenerateInsertCommand(obj, mySqlInsertStatementTemplate, tableName, KeywordEscapeMethod.Backtick);
         }
 
         /// <summary>
@@ -2248,11 +2614,11 @@ SELECT LAST_INSERT_ID() AS LastInsertedId;
         /// The value of 'tableName' cannot be null when the object passed is an anonymous
         /// type.
         /// </exception>
-        public static DbCommand GenerateInsertsForMySql<T>( this DbCommand dbCommand, List<T> listOfObjects, string tableName = null )
+        public static DbCommand GenerateInsertsForMySql<T>(this DbCommand dbCommand, List<T> listOfObjects, string tableName = null)
         {
-            foreach ( T obj in listOfObjects )
+            foreach (T obj in listOfObjects)
             {
-                dbCommand.GenerateInsertForMySql( obj, tableName );
+                dbCommand.GenerateInsertForMySql(obj, tableName);
             }
 
             return dbCommand;
@@ -2277,7 +2643,7 @@ SELECT LAST_INSERT_ID() AS LastInsertedId;
         /// type.
         /// </exception>
         // ReSharper disable once InconsistentNaming
-        public static DbCommand GenerateInsertForSQLite( this DbCommand dbCommand, object obj, string tableName = null )
+        public static DbCommand GenerateInsertForSQLite(this DbCommand dbCommand, object obj, string tableName = null)
         {
             const string sqliteInsertStatementTemplate = @"
 INSERT INTO {0}
@@ -2289,7 +2655,7 @@ VALUES
 SELECT last_insert_rowid() AS [LastInsertedId];
 "; // Intentional line break for readability of multiple inserts
 
-            return dbCommand.GenerateInsertCommand( obj, sqliteInsertStatementTemplate, tableName, KeywordEscapeMethod.SquareBracket );
+            return dbCommand.GenerateInsertCommand(obj, sqliteInsertStatementTemplate, tableName, KeywordEscapeMethod.SquareBracket);
         }
 
         /// <summary>
@@ -2312,11 +2678,11 @@ SELECT last_insert_rowid() AS [LastInsertedId];
         /// type.
         /// </exception>
         // ReSharper disable once InconsistentNaming
-        public static DbCommand GenerateInsertsForSQLite<T>( this DbCommand dbCommand, List<T> listOfObjects, string tableName = null )
+        public static DbCommand GenerateInsertsForSQLite<T>(this DbCommand dbCommand, List<T> listOfObjects, string tableName = null)
         {
-            foreach ( T obj in listOfObjects )
+            foreach (T obj in listOfObjects)
             {
-                dbCommand.GenerateInsertForSQLite( obj, tableName );
+                dbCommand.GenerateInsertForSQLite(obj, tableName);
             }
 
             return dbCommand;
@@ -2340,7 +2706,7 @@ SELECT last_insert_rowid() AS [LastInsertedId];
         /// The value of 'tableName' cannot be null when the object passed is an anonymous
         /// type.
         /// </exception>
-        public static DbCommand GenerateInsertForSqlServer( this DbCommand dbCommand, object obj, string tableName = null )
+        public static DbCommand GenerateInsertForSqlServer(this DbCommand dbCommand, object obj, string tableName = null)
         {
             const string sqlServerInsertStatementTemplate = @"
 INSERT INTO {0}
@@ -2352,7 +2718,7 @@ VALUES
 SELECT SCOPE_IDENTITY() AS [LastInsertedId];
 "; // Intentional line break for readability of multiple inserts
 
-            return dbCommand.GenerateInsertCommand( obj, sqlServerInsertStatementTemplate, tableName, KeywordEscapeMethod.SquareBracket );
+            return dbCommand.GenerateInsertCommand(obj, sqlServerInsertStatementTemplate, tableName, KeywordEscapeMethod.SquareBracket);
         }
 
         /// <summary>
@@ -2374,11 +2740,11 @@ SELECT SCOPE_IDENTITY() AS [LastInsertedId];
         /// The value of 'tableName' cannot be null when the object passed is an anonymous
         /// type.
         /// </exception>
-        public static DbCommand GenerateInsertsForSqlServer<T>( this DbCommand dbCommand, List<T> listOfObjects, string tableName = null )
+        public static DbCommand GenerateInsertsForSqlServer<T>(this DbCommand dbCommand, List<T> listOfObjects, string tableName = null)
         {
-            foreach ( T obj in listOfObjects )
+            foreach (T obj in listOfObjects)
             {
-                dbCommand.GenerateInsertForSqlServer( obj, tableName );
+                dbCommand.GenerateInsertForSqlServer(obj, tableName);
             }
 
             return dbCommand;
@@ -2420,38 +2786,38 @@ SELECT SCOPE_IDENTITY() AS [LastInsertedId];
         /// The value of 'tableName' cannot be null when the object passed is an anonymous
         /// type.
         /// </exception>
-        public static DbCommand GenerateInsertCommand( this DbCommand dbCommand, object obj, string sqlInsertStatementTemplate, string tableName = null, KeywordEscapeMethod keywordEscapeMethod = KeywordEscapeMethod.None )
+        public static DbCommand GenerateInsertCommand(this DbCommand dbCommand, object obj, string sqlInsertStatementTemplate, string tableName = null, KeywordEscapeMethod keywordEscapeMethod = KeywordEscapeMethod.None)
         {
-            if ( obj == null )
+            if (obj == null)
             {
-                throw new ArgumentNullException( "obj" );
+                throw new ArgumentNullException("obj");
             }
 
-            if ( sqlInsertStatementTemplate == null )
+            if (sqlInsertStatementTemplate == null)
             {
-                throw new ArgumentNullException( "sqlInsertStatementTemplate" );
+                throw new ArgumentNullException("sqlInsertStatementTemplate");
             }
 
-            if ( String.IsNullOrWhiteSpace( sqlInsertStatementTemplate ) )
+            if (String.IsNullOrWhiteSpace(sqlInsertStatementTemplate))
             {
-                throw new ArgumentNullException( "sqlInsertStatementTemplate", "The 'sqlInsertStatementTemplate' parameter must not be null, empty, or whitespace." );
+                throw new ArgumentNullException("sqlInsertStatementTemplate", "The 'sqlInsertStatementTemplate' parameter must not be null, empty, or whitespace.");
             }
 
-            if ( sqlInsertStatementTemplate.Contains( "{0}" ) == false || sqlInsertStatementTemplate.Contains( "{1}" ) == false || sqlInsertStatementTemplate.Contains( "{2}" ) == false )
+            if (sqlInsertStatementTemplate.Contains("{0}") == false || sqlInsertStatementTemplate.Contains("{1}") == false || sqlInsertStatementTemplate.Contains("{2}") == false)
             {
-                throw new Exception( "The 'sqlInsertStatementTemplate' parameter does not conform to the template requirements of containing three string.Format arguments. A valid example is: INSERT INTO {0} ({1}) VALUES({2});" );
+                throw new Exception("The 'sqlInsertStatementTemplate' parameter does not conform to the template requirements of containing three string.Format arguments. A valid example is: INSERT INTO {0} ({1}) VALUES({2});");
             }
 
-            if ( tableName == null && obj.IsAnonymousType() )
+            if (tableName == null && obj.IsAnonymousType())
             {
-                throw new ArgumentNullException( "tableName", "The 'tableName' parameter must be provided when the object supplied is an anonymous type." );
+                throw new ArgumentNullException("tableName", "The 'tableName' parameter must be provided when the object supplied is an anonymous type.");
             }
 
             string preKeywordEscapeCharacter = "";
 
             string postKeywordEscapeCharacter = "";
 
-            switch ( keywordEscapeMethod )
+            switch (keywordEscapeMethod)
             {
                 case KeywordEscapeMethod.SquareBracket:
                     preKeywordEscapeCharacter = "[";
@@ -2467,7 +2833,7 @@ SELECT SCOPE_IDENTITY() AS [LastInsertedId];
                     break;
             }
 
-            if ( tableName == null )
+            if (tableName == null)
             {
                 tableName = preKeywordEscapeCharacter + obj.GetType().Name + postKeywordEscapeCharacter;
             }
@@ -2478,11 +2844,11 @@ SELECT SCOPE_IDENTITY() AS [LastInsertedId];
 
             string values = string.Empty;
 
-            IDictionary<string, object> namesAndValues = GetPropertyAndFieldNamesAndValues( obj );
+            IDictionary<string, object> namesAndValues = GetPropertyAndFieldNamesAndValues(obj);
 
-            foreach ( var nameAndValue in namesAndValues )
+            foreach (var nameAndValue in namesAndValues)
             {
-                if ( nameAndValue.Value == null )
+                if (nameAndValue.Value == null)
                     continue;
 
                 columns += linePrefix + preKeywordEscapeCharacter + nameAndValue.Key + postKeywordEscapeCharacter + ",";
@@ -2493,10 +2859,10 @@ SELECT SCOPE_IDENTITY() AS [LastInsertedId];
 
                 values += linePrefix + parameterName + ",";
 
-                dbCommand.AddParameter( parameterName, nameAndValue.Value );
+                dbCommand.AddParameter(parameterName, nameAndValue.Value);
             }
 
-            dbCommand.AppendCommandText( string.Format( sqlInsertStatementTemplate, tableName, columns.TrimEnd( ',' ), values.TrimEnd( ',' ) ) );
+            dbCommand.AppendCommandText(string.Format(sqlInsertStatementTemplate, tableName, columns.TrimEnd(','), values.TrimEnd(',')));
 
             return dbCommand;
         }
@@ -2504,38 +2870,38 @@ SELECT SCOPE_IDENTITY() AS [LastInsertedId];
         /// <summary>Gets a dictionary containing the objects property and field names and values.</summary>
         /// <param name="obj">Object to get names and values from.</param>
         /// <returns>Dictionary containing property and field names and values.</returns>
-        private static IDictionary<string, object> GetPropertyAndFieldNamesAndValues( object obj )
+        private static IDictionary<string, object> GetPropertyAndFieldNamesAndValues(object obj)
         {
             // Support dynamic objects backed by a dictionary of string object.
             var objectAsDictionary = obj as IDictionary<string, object>;
 
-            if ( objectAsDictionary != null )
+            if (objectAsDictionary != null)
                 return objectAsDictionary;
 
             Type type = obj.GetType();
 
-            OrderedDictionary orderedDictionary = TypeCacher.GetPropertiesAndFields( type );
+            OrderedDictionary orderedDictionary = TypeCacher.GetPropertiesAndFields(type);
 
             var dictionary = new Dictionary<string, object>();
 
-            foreach ( DictionaryEntry entry in orderedDictionary )
+            foreach (DictionaryEntry entry in orderedDictionary)
             {
                 object value = null;
 
-                if ( entry.Value is FieldInfo )
+                if (entry.Value is FieldInfo)
                 {
                     var fieldInfo = entry.Value as FieldInfo;
 
-                    value = fieldInfo.GetValue( obj );
+                    value = fieldInfo.GetValue(obj);
                 }
-                else if ( entry.Value is PropertyInfo )
+                else if (entry.Value is PropertyInfo)
                 {
                     var propertyInfo = entry.Value as PropertyInfo;
 
-                    value = propertyInfo.GetValue( obj, null );
+                    value = propertyInfo.GetValue(obj, null);
                 }
 
-                dictionary.Add( entry.Key.ToString(), value );
+                dictionary.Add(entry.Key.ToString(), value);
             }
 
             return dictionary;
@@ -2581,57 +2947,57 @@ SELECT SCOPE_IDENTITY() AS [LastInsertedId];
     /// </example>
     public class DynamicDictionary : DynamicObject, IDictionary<string, object>
     {
-        private readonly IDictionary<string, object> _dictionary = new DefaultValueDictionary<string, object>( StringComparer.InvariantCultureIgnoreCase );
+        private readonly IDictionary<string, object> _dictionary = new DefaultValueDictionary<string, object>(StringComparer.InvariantCultureIgnoreCase);
 
         #region DynamicObject Overrides
 
-        public override bool TryGetMember( GetMemberBinder binder, out object result )
+        public override bool TryGetMember(GetMemberBinder binder, out object result)
         {
             result = _dictionary[binder.Name];
 
             return true;
         }
 
-        public override bool TrySetMember( SetMemberBinder binder, object value )
+        public override bool TrySetMember(SetMemberBinder binder, object value)
         {
-            if ( _dictionary.ContainsKey( binder.Name ) )
+            if (_dictionary.ContainsKey(binder.Name))
             {
                 _dictionary[binder.Name] = value;
             }
             else
             {
-                _dictionary.Add( binder.Name, value );
+                _dictionary.Add(binder.Name, value);
             }
 
             return true;
         }
 
-        public override bool TryInvokeMember( InvokeMemberBinder binder, object[] args, out object result )
+        public override bool TryInvokeMember(InvokeMemberBinder binder, object[] args, out object result)
         {
-            if ( _dictionary.ContainsKey( binder.Name ) && _dictionary[binder.Name] is Delegate )
+            if (_dictionary.ContainsKey(binder.Name) && _dictionary[binder.Name] is Delegate)
             {
                 var delegateValue = _dictionary[binder.Name] as Delegate;
 
-                result = delegateValue.DynamicInvoke( args );
+                result = delegateValue.DynamicInvoke(args);
 
                 return true;
             }
 
-            return base.TryInvokeMember( binder, args, out result );
+            return base.TryInvokeMember(binder, args, out result);
         }
 
         #endregion DynamicObject Overrides
 
         #region IDictionary<string,object> Members
 
-        public void Add( string key, object value )
+        public void Add(string key, object value)
         {
-            _dictionary.Add( key, value );
+            _dictionary.Add(key, value);
         }
 
-        public bool ContainsKey( string key )
+        public bool ContainsKey(string key)
         {
-            return _dictionary.ContainsKey( key );
+            return _dictionary.ContainsKey(key);
         }
 
         public ICollection<string> Keys
@@ -2639,14 +3005,14 @@ SELECT SCOPE_IDENTITY() AS [LastInsertedId];
             get { return _dictionary.Keys; }
         }
 
-        public bool Remove( string key )
+        public bool Remove(string key)
         {
-            return _dictionary.Remove( key );
+            return _dictionary.Remove(key);
         }
 
-        public bool TryGetValue( string key, out object value )
+        public bool TryGetValue(string key, out object value)
         {
-            return _dictionary.TryGetValue( key, out value );
+            return _dictionary.TryGetValue(key, out value);
         }
 
         public ICollection<object> Values
@@ -2660,7 +3026,7 @@ SELECT SCOPE_IDENTITY() AS [LastInsertedId];
             {
                 object value;
 
-                _dictionary.TryGetValue( key, out value );
+                _dictionary.TryGetValue(key, out value);
 
                 return value;
             }
@@ -2671,9 +3037,9 @@ SELECT SCOPE_IDENTITY() AS [LastInsertedId];
 
         #region ICollection<KeyValuePair<string,object>> Members
 
-        public void Add( KeyValuePair<string, object> item )
+        public void Add(KeyValuePair<string, object> item)
         {
-            _dictionary.Add( item );
+            _dictionary.Add(item);
         }
 
         public void Clear()
@@ -2681,14 +3047,14 @@ SELECT SCOPE_IDENTITY() AS [LastInsertedId];
             _dictionary.Clear();
         }
 
-        public bool Contains( KeyValuePair<string, object> item )
+        public bool Contains(KeyValuePair<string, object> item)
         {
-            return _dictionary.Contains( item );
+            return _dictionary.Contains(item);
         }
 
-        public void CopyTo( KeyValuePair<string, object>[] array, int arrayIndex )
+        public void CopyTo(KeyValuePair<string, object>[] array, int arrayIndex)
         {
-            _dictionary.CopyTo( array, arrayIndex );
+            _dictionary.CopyTo(array, arrayIndex);
         }
 
         public int Count
@@ -2701,9 +3067,9 @@ SELECT SCOPE_IDENTITY() AS [LastInsertedId];
             get { return _dictionary.IsReadOnly; }
         }
 
-        public bool Remove( KeyValuePair<string, object> item )
+        public bool Remove(KeyValuePair<string, object> item)
         {
-            return _dictionary.Remove( item );
+            return _dictionary.Remove(item);
         }
 
         #endregion ICollection<KeyValuePair<string,object>> Members
@@ -2747,30 +3113,30 @@ SELECT SCOPE_IDENTITY() AS [LastInsertedId];
 
             /// <summary>Initializes with an existing dictionary.</summary>
             /// <param name="dictionary"></param>
-            public DefaultValueDictionary( IDictionary<TKey, TValue> dictionary )
+            public DefaultValueDictionary(IDictionary<TKey, TValue> dictionary)
             {
                 _dictionary = dictionary;
             }
 
             /// <summary>Initializes using the given equality comparer.</summary>
             /// <param name="comparer"></param>
-            public DefaultValueDictionary( IEqualityComparer<TKey> comparer )
+            public DefaultValueDictionary(IEqualityComparer<TKey> comparer)
             {
-                _dictionary = new Dictionary<TKey, TValue>( comparer );
+                _dictionary = new Dictionary<TKey, TValue>(comparer);
             }
 
             #endregion Constructors
 
             #region IDictionary<string,TValue> Members
 
-            public void Add( TKey key, TValue value )
+            public void Add(TKey key, TValue value)
             {
-                _dictionary.Add( key, value );
+                _dictionary.Add(key, value);
             }
 
-            public bool ContainsKey( TKey key )
+            public bool ContainsKey(TKey key)
             {
-                return _dictionary.ContainsKey( key );
+                return _dictionary.ContainsKey(key);
             }
 
             public ICollection<TKey> Keys
@@ -2778,14 +3144,14 @@ SELECT SCOPE_IDENTITY() AS [LastInsertedId];
                 get { return _dictionary.Keys; }
             }
 
-            public bool Remove( TKey key )
+            public bool Remove(TKey key)
             {
-                return _dictionary.Remove( key );
+                return _dictionary.Remove(key);
             }
 
-            public bool TryGetValue( TKey key, out TValue value )
+            public bool TryGetValue(TKey key, out TValue value)
             {
-                return _dictionary.TryGetValue( key, out value );
+                return _dictionary.TryGetValue(key, out value);
             }
 
             public ICollection<TValue> Values
@@ -2799,7 +3165,7 @@ SELECT SCOPE_IDENTITY() AS [LastInsertedId];
                 {
                     TValue value;
 
-                    _dictionary.TryGetValue( key, out value );
+                    _dictionary.TryGetValue(key, out value);
 
                     return value;
                 }
@@ -2810,9 +3176,9 @@ SELECT SCOPE_IDENTITY() AS [LastInsertedId];
 
             #region ICollection<KeyValuePair<string,TValue>> Members
 
-            public void Add( KeyValuePair<TKey, TValue> item )
+            public void Add(KeyValuePair<TKey, TValue> item)
             {
-                _dictionary.Add( item );
+                _dictionary.Add(item);
             }
 
             public void Clear()
@@ -2820,14 +3186,14 @@ SELECT SCOPE_IDENTITY() AS [LastInsertedId];
                 _dictionary.Clear();
             }
 
-            public bool Contains( KeyValuePair<TKey, TValue> item )
+            public bool Contains(KeyValuePair<TKey, TValue> item)
             {
-                return _dictionary.Contains( item );
+                return _dictionary.Contains(item);
             }
 
-            public void CopyTo( KeyValuePair<TKey, TValue>[] array, int arrayIndex )
+            public void CopyTo(KeyValuePair<TKey, TValue>[] array, int arrayIndex)
             {
-                _dictionary.CopyTo( array, arrayIndex );
+                _dictionary.CopyTo(array, arrayIndex);
             }
 
             public int Count
@@ -2840,9 +3206,9 @@ SELECT SCOPE_IDENTITY() AS [LastInsertedId];
                 get { return _dictionary.IsReadOnly; }
             }
 
-            public bool Remove( KeyValuePair<TKey, TValue> item )
+            public bool Remove(KeyValuePair<TKey, TValue> item)
             {
-                return _dictionary.Remove( item );
+                return _dictionary.Remove(item);
             }
 
             #endregion ICollection<KeyValuePair<TKey,TValue>> Members

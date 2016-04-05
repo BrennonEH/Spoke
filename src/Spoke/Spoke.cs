@@ -1,5 +1,5 @@
 ﻿/*
-    Spoke v0.09.2
+    Spoke v0.1.0.0
     
     Spoke is a webhooks library designed to be implemented in your current service application.
     
@@ -61,6 +61,10 @@ namespace Spoke
         /// </summary>
         public static SpokeConfiguration Configuration;
 
+        public static ConcurrentQueue<Action> WorkerQueue = new ConcurrentQueue<Action>();
+
+        private static readonly AutoResetEvent ResetEvent = new AutoResetEvent( false );
+
         /// <summary>
         /// Initializes an instance of spoke.
         /// </summary>
@@ -76,6 +80,7 @@ namespace Spoke
         public void Start()
         {
             InternalApi.StartClock();
+            InternalApi.StartWorkerThreads();
         }
 
         /// <summary>
@@ -135,11 +140,12 @@ namespace Spoke
 
                 @event = Configuration.Database().SaveEvent( @event, false );
 
-                Task.Run( () =>
+                InternalApi.QueueAction(() =>
                 {
-                    InternalApi.SaveEventTopics( @event );
-                } )
-                .ContinueWith( x => InternalApi.ProcessEvent( @event.EventId, null ) );
+                    InternalApi.SaveEventTopics(@event);
+
+                    InternalApi.ProcessEvent(@event.EventId, null);
+                });
 
                 return @event;
             }
@@ -218,25 +224,37 @@ namespace Spoke
                 string requestType
                 )
             {
-                var subscription = InternalApi.SaveSubscription(
+                var subscription = GetSubscription(subscriptionId, subscriptionName).Subscription;
+
+                subscription = InternalApi.SaveSubscription(
                     subscriptionId,
-                    subscriptionName,
+                    subscriptionName ?? subscription.SubscriptionName,
                     Models.SubscriptionStatusCodes.Active,
-                    serviceEndPoint,
-                    string.IsNullOrWhiteSpace( serviceTypeCode ) 
-                        ? "DEFAULT" 
+                    serviceEndPoint ?? subscription.ApiEndpoint,
+                    string.IsNullOrWhiteSpace(serviceTypeCode)
+                        ? subscription.ApiType
                         : serviceTypeCode,
-                    httpMethod,
-                    transformFunction,
-                    abortAfterMinutes,
-                    topics.Select(
-                        t => new Models.SubscriptionTopic
-                        {
-                            Key = t.Key,
-                            Value = t.Value,
-                            OperatorTypeCode = t.OperatorTypeCode
-                        } ).ToList(),
-                    requestType );
+                    httpMethod ?? subscription.HttpMethod,
+                    (transformFunction ?? subscription.TransformFunction) == "CLEAR"
+                        ? null
+                        : subscription.TransformFunction,
+                    abortAfterMinutes ?? subscription.AbortAfterMinutes,
+                    topics != null
+                        ? topics.Select(
+                            t => new Models.SubscriptionTopic
+                            {
+                                Key = t.Key,
+                                Value = t.Value,
+                                OperatorTypeCode = t.OperatorTypeCode
+                            }).ToList()
+                        : subscription.Topics,
+                    requestType ?? subscription.RequestType);
+
+                return new Models.SubscriptionResponse
+                {
+                    Subscription = subscription
+                };
+
 
                 return new Models.SubscriptionResponse
                 {
@@ -833,12 +851,23 @@ namespace Spoke
                 return Configuration.Database().SaveSubscription( subscription );
             }
 
+            public static int GetPendingActionCount()
+            {
+                return WorkerQueue.Count();
+            }
+
+            public static void QueueAction( Action action )
+            {
+                WorkerQueue.Enqueue( action );
+                ResetEvent.Set();
+            }
+
             /// <summary>
             /// Start the background clock thread.
             /// </summary>
             public static void StartClock()
             {
-                Task.Run( () =>
+                QueueAction( () =>
                 {
                     while ( true )
                     {
@@ -886,6 +915,37 @@ namespace Spoke
                     // ReSharper disable once FunctionNeverReturns
                     // We intentioanlly leave this thread running forever to continue to generate clock events.
                 } );
+            }
+
+            public static void StartWorkerThreads()
+            {
+                for (int i = 0; i < Configuration.MaxWorkerThreads; i++)
+                {
+                    Task.Run(() =>
+                    {
+                       while (true)
+                       {
+                           try
+                           {
+                               Action action;
+
+                               if (WorkerQueue.TryDequeue(out action))
+                               {
+                                   action();
+                               }
+                               else
+                               {
+                                   ResetEvent.WaitOne();
+                               }
+                           }
+                           catch
+                           {
+
+                               throw;
+                           }
+                       }
+                    });
+                }
             }
 
             /// <summary>
@@ -1029,98 +1089,95 @@ namespace Spoke
             private static void ExecuteAsyncNotification(
                     Models.SubscriptionNotification notification,
                     Action<dynamic> onComplete,
-                    TimeSpan? timeout = null )
+                    TimeSpan? timeout = null)
             {
-                Task.Run( () =>
-                {
-                    var mutexKey =
-                        $"event-{notification.EventSubscription.EventId}-subscription-{notification.EventSubscription.SubscriptionId}";
+                QueueAction(() =>
+               {
+                   var mutexKey =
+                       $"event-{notification.EventSubscription.EventId}-subscription-{notification.EventSubscription.SubscriptionId}";
 
-                    ExceptionWrapper<object>( () =>
-                    {
-                        var mutex = Configuration.Database().TryAcquireMutex( mutexKey,
-                            TimeSpan.FromMinutes(
-                                Configuration.EventSubscriptionMutexTimeToLiveMinutes.ToInt() ) );
+                   ExceptionWrapper<object>(() =>
+                   {
+                       var mutex = Configuration.Database().TryAcquireMutex(mutexKey,
+                           TimeSpan.FromMinutes(
+                               Configuration.EventSubscriptionMutexTimeToLiveMinutes.ToInt()));
 
-                        if ( mutex == null )
-                        {
-                            LogEventSubscriptionActivity(
-                                notification.EventSubscription.Event.EventId,
-                                notification.EventSubscription.EventSubscriptionId,
-                                Utils.EventSubscriptionActivityTypeCode.SubscriptionRequestErrorMutexCouldNotBeAcquired,
-                                new
-                                {
-                                    Notification = notification
-                                } );
+                       if (mutex == null)
+                       {
+                           LogEventSubscriptionActivity(
+                               notification.EventSubscription.Event.EventId,
+                               notification.EventSubscription.EventSubscriptionId,
+                               Utils.EventSubscriptionActivityTypeCode.SubscriptionRequestErrorMutexCouldNotBeAcquired,
+                               new
+                               {
+                                   Notification = notification
+                               });
 
-                            return null;
-                        }
+                           return null;
+                       }
 
-                        var fulfilledActivities = Configuration.Database().GetEventSubscriptionActivities(
-                            notification.EventSubscription.Event.EventId,
-                            notification.EventSubscription.Subscription.SubscriptionId,
-                            Utils.EventSubscriptionActivityTypeCode.SubscriptionResponseOk,
-                            null );
+                       var fulfilledActivities = Configuration.Database().GetEventSubscriptionActivities(
+                           notification.EventSubscription.Event.EventId,
+                           notification.EventSubscription.Subscription.SubscriptionId,
+                           Utils.EventSubscriptionActivityTypeCode.SubscriptionResponseOk,
+                           null);
 
-                        if ( fulfilledActivities.Any() )
-                        {
-                            LogEventSubscriptionActivity(
-                                notification.EventSubscription.Event.EventId,
-                                notification.EventSubscription.EventSubscriptionId,
-                                Utils.EventSubscriptionActivityTypeCode.EventSubscriptionPreviouslyFulfilled,
-                                new
-                                {
-                                    PreviouslyFulfilled = fulfilledActivities,
-                                    Notification = notification
-                                } );
+                       if (fulfilledActivities.Any())
+                       {
+                           LogEventSubscriptionActivity(
+                               notification.EventSubscription.Event.EventId,
+                               notification.EventSubscription.EventSubscriptionId,
+                               Utils.EventSubscriptionActivityTypeCode.EventSubscriptionPreviouslyFulfilled,
+                               new
+                               {
+                                   PreviouslyFulfilled = fulfilledActivities,
+                                   Notification = notification
+                               });
 
-                            return null;
-                        }
+                           return null;
+                       }
 
-                        if ( timeout != null )
-                        {
-                            Thread.Sleep( timeout.Value );
-                        }
+                       if (timeout != null)
+                       {
+                           Thread.Sleep(timeout.Value);
+                       }
 
-                        Task.Run( () =>
-                        {
-                            Models.HttpResponse response;
+                       Models.HttpResponse response;
 
-                            switch ( notification.EventSubscription.Subscription.RequestType )
-                            {
-                                case "PARAMETERS":
-                                    response = HttpPostParameters( notification.Uri, Configuration.JsonSerializer.Deserialize<Dictionary<string, string>>( (string)notification.Payload ).ToNameValueCollection() );
-                                    break;
-                                case "QUERY_STRING":
-                                    response = HttpGet( notification.Uri, Configuration.JsonSerializer.Deserialize<Dictionary<string, string>>( (string)notification.Payload ).ToNameValueCollection() );
-                                    break;
-                                case null:
-                                case "OBJECT":
-                                    response = HttpPostObject( notification.Uri, notification.Payload.ToString() );
-                                    break;
-                                default:
-                                    throw new Exception( "Request type does not exist!" );
-                            }
+                       switch (notification.EventSubscription.Subscription.RequestType)
+                       {
+                           case "PARAMETERS":
+                               response = HttpPostParameters(notification.Uri, Configuration.JsonSerializer.Deserialize<Dictionary<string, string>>((string)notification.Payload).ToNameValueCollection());
+                               break;
+                           case "QUERY_STRING":
+                               response = HttpGet(notification.Uri, Configuration.JsonSerializer.Deserialize<Dictionary<string, string>>((string)notification.Payload).ToNameValueCollection());
+                               break;
+                           case null:
+                           case "OBJECT":
+                               response = HttpPostObject(notification.Uri, notification.Payload.ToString());
+                               break;
+                           default:
+                               throw new Exception("Request type does not exist!");
+                       }
 
-                            Configuration.Database().ReleaseMutex( mutex );
+                       Configuration.Database().ReleaseMutex(mutex);
 
-                            onComplete( response );
-                        } );
+                       onComplete(response);
 
-                        LogEventSubscriptionActivity(
-                            notification.EventSubscription.Event.EventId,
-                            notification.EventSubscription.EventSubscriptionId,
-                            Utils.EventSubscriptionActivityTypeCode.SubscriptionRequestSent,
-                            notification );
+                       LogEventSubscriptionActivity(
+                           notification.EventSubscription.Event.EventId,
+                           notification.EventSubscription.EventSubscriptionId,
+                           Utils.EventSubscriptionActivityTypeCode.SubscriptionRequestSent,
+                           notification);
 
                         // placeholder until this gets refactored
                         return null;
-                    },
-                        notification.EventSubscription.Event.EventId,
-                        notification.EventSubscription.EventSubscriptionId,
-                        mutexKey,
-                        true );
-                } );
+                   },
+                       notification.EventSubscription.Event.EventId,
+                       notification.EventSubscription.EventSubscriptionId,
+                       mutexKey,
+                       true);
+               });
             }
 
             /// <summary>
@@ -3359,6 +3416,7 @@ IF @result IN ( 0, 1 )
             public int? ClockBackfillOffsetMinutes = 2;
             public int? ClockBackfillMutexTimeToLiveMinutes = 2;
             public int? ClockSleepMilliseconds = 10000;
+            public int? MaxWorkerThreads = 40;
             public bool? SendClockMessages = true;
             public string AppName = $"{Environment.MachineName}-{AppDomain.CurrentDomain.FriendlyName}";
             public string UserName = WindowsIdentity.GetCurrent()?.Name;
