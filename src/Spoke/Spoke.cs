@@ -223,7 +223,7 @@ namespace Spoke
             {
                 var subscription = GetSubscription(subscriptionId, subscriptionName).Subscription;
 
-                subscription = InternalApi.SaveSubscription(
+               return InternalApi.SaveSubscription(
                     subscriptionId,
                     subscriptionName ?? subscription.SubscriptionName,
                     Models.SubscriptionStatusCodes.Active,
@@ -246,12 +246,6 @@ namespace Spoke
                             }).ToList()
                         : subscription.Topics,
                     requestType ?? subscription.RequestType);
-
-                return new Models.SubscriptionResponse
-                {
-                    Subscription = subscription
-                };
-
             }
 
             /// <summary>
