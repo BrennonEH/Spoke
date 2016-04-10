@@ -63,7 +63,7 @@ namespace Spoke
 
         public static ConcurrentQueue<Action> WorkerQueue = new ConcurrentQueue<Action>();
 
-        private static readonly AutoResetEvent ResetEvent = new AutoResetEvent( false );
+        private static readonly AutoResetEvent ResetEvent = new AutoResetEvent(false);
 
         /// <summary>
         /// Initializes an instance of spoke.
@@ -179,7 +179,7 @@ namespace Spoke
                     Models.SubscriptionStatusCodes.Active,
                     serviceEndPoint,
                     string.IsNullOrWhiteSpace(serviceTypeCode)
-                        ? "DEFAULT" 
+                        ? "DEFAULT"
                         : serviceTypeCode,
                     httpMethod,
                     transformFunction,
@@ -223,29 +223,29 @@ namespace Spoke
             {
                 var subscription = GetSubscription(subscriptionId, subscriptionName).Subscription;
 
-               return InternalApi.SaveSubscription(
-                    subscriptionId,
-                    subscriptionName ?? subscription.SubscriptionName,
-                    Models.SubscriptionStatusCodes.Active,
-                    serviceEndPoint ?? subscription.ApiEndpoint,
-                    string.IsNullOrWhiteSpace(serviceTypeCode)
-                        ? subscription.ApiType
-                        : serviceTypeCode,
-                    httpMethod ?? subscription.HttpMethod,
-                    (transformFunction ?? subscription.TransformFunction) == "CLEAR"
-                        ? null
-                        : subscription.TransformFunction,
-                    abortAfterMinutes ?? subscription.AbortAfterMinutes,
-                    topics != null
-                        ? topics.Select(
-                        t => new Models.SubscriptionTopic
-                        {
-                            Key = t.Key,
-                            Value = t.Value,
-                            OperatorTypeCode = t.OperatorTypeCode
-                            }).ToList()
-                        : subscription.Topics,
-                    requestType ?? subscription.RequestType);
+                return InternalApi.SaveSubscription(
+                     subscriptionId,
+                     subscriptionName ?? subscription.SubscriptionName,
+                     Models.SubscriptionStatusCodes.Active,
+                     serviceEndPoint ?? subscription.ApiEndpoint,
+                     string.IsNullOrWhiteSpace(serviceTypeCode)
+                         ? subscription.ApiType
+                         : serviceTypeCode,
+                     httpMethod ?? subscription.HttpMethod,
+                     (transformFunction ?? subscription.TransformFunction) == "CLEAR"
+                         ? null
+                         : subscription.TransformFunction,
+                     abortAfterMinutes ?? subscription.AbortAfterMinutes,
+                     topics != null
+                         ? topics.Select(
+                         t => new Models.SubscriptionTopic
+                         {
+                             Key = t.Key,
+                             Value = t.Value,
+                             OperatorTypeCode = t.OperatorTypeCode
+                         }).ToList()
+                         : subscription.Topics,
+                     requestType ?? subscription.RequestType);
             }
 
             /// <summary>
@@ -268,7 +268,7 @@ namespace Spoke
                     Subscription = subscription.Subscription
                 };
             }
-            
+
             /// <summary>
             /// Soft delete a current subscription. This will update the status of the subscription to deleted which is similar to setting one to inactive.
             /// </summary>
@@ -603,10 +603,10 @@ namespace Spoke
 
                 var result = ExceptionWrapper<object>(() =>
                 {
-                   var mutex = Configuration.Database().TryAcquireMutex(mutexKey,
-                       TimeSpan.FromMinutes(Configuration.EventProcessingMutexTimeToLiveMinutes.ToInt()));
+                    var mutex = Configuration.Database().TryAcquireMutex(mutexKey,
+                        TimeSpan.FromMinutes(Configuration.EventProcessingMutexTimeToLiveMinutes.ToInt()));
 
-                   if (mutex == null)
+                    if (mutex == null)
                     {
                         LogEventSubscriptionActivity(
                             eventId,
@@ -616,7 +616,7 @@ namespace Spoke
                             {
                                 eventId,
                                 subscription
-                           });
+                            });
 
                         return new
                         {
@@ -628,11 +628,11 @@ namespace Spoke
                     var notifications = new List<Models.SubscriptionNotification>();
                     string activityTypeCode;
 
-                   if (subscription == null)
+                    if (subscription == null)
                     {
                         // generate new notifications and fill them in with any pre-existing eventSubscriptions
-                       notifications = GenerateSubscriptionNotificationsForEvent(eventId).SubscriptionNotifications
-                          .SetEventSubscriptionIds(Configuration.Database().GetEventSubscriptions(eventId, false));
+                        notifications = GenerateSubscriptionNotificationsForEvent(eventId).SubscriptionNotifications
+                           .SetEventSubscriptionIds(Configuration.Database().GetEventSubscriptions(eventId, false));
 
                         // save new EventSubscriptions for any notifications that don't currently have one.
                         var eventSubscriptions =
@@ -640,15 +640,15 @@ namespace Spoke
                               notifications.Where(x => x.EventSubscription.EventSubscriptionId == null)
                                   .Select(x => x.EventSubscription).ToList());
 
-                       notifications = notifications.SetEventSubscriptionIds(eventSubscriptions);
+                        notifications = notifications.SetEventSubscriptionIds(eventSubscriptions);
 
                         activityTypeCode = Utils.EventSubscriptionActivityTypeCode.SubscriptionsFound;
                     }
                     else
                     {
-                       notifications.Add(GenerateSubscriptionNotification(
-                            eventId,
-                           subscription).SubscriptionNotification);
+                        notifications.Add(GenerateSubscriptionNotification(
+                             eventId,
+                            subscription).SubscriptionNotification);
 
                         activityTypeCode = Utils.EventSubscriptionActivityTypeCode.InvokeServiceRequestGenerated;
                     }
@@ -660,11 +660,11 @@ namespace Spoke
                         new
                         {
                             notifications
-                       });
+                        });
 
-                   ProcessNotifications(notifications);
+                    ProcessNotifications(notifications);
 
-                   Configuration.Database().ReleaseMutex(mutex);
+                    Configuration.Database().ReleaseMutex(mutex);
 
                     return new
                     {
@@ -842,9 +842,9 @@ namespace Spoke
                 return WorkerQueue.Count();
             }
 
-            public static void QueueAction( Action action )
+            public static void QueueAction(Action action)
             {
-                WorkerQueue.Enqueue( action );
+                WorkerQueue.Enqueue(action);
                 ResetEvent.Set();
             }
 
@@ -853,9 +853,9 @@ namespace Spoke
             /// </summary>
             public static void StartClock()
             {
-                QueueAction( () =>
+                Task.Run(() =>
                 {
-                   while (true)
+                    while (true)
                     {
                         try
                         {
@@ -865,31 +865,31 @@ namespace Spoke
                                    TimeSpan.FromMinutes(1).Add(TimeSpan.FromSeconds(30)))
                                 : null;
 
-                           if (mutex == null)
+                            if (mutex == null)
                             {
-                               Thread.Sleep(Configuration.ClockSleepMilliseconds ?? 0);
+                                Thread.Sleep(Configuration.ClockSleepMilliseconds ?? 0);
                                 continue;
                             }
 
                             var currentMinute = DateTime.Now.Minute;
 
-                           while (DateTime.Now.Minute == currentMinute)
+                            while (DateTime.Now.Minute == currentMinute)
                             {
-                               Thread.Sleep(1000);
+                                Thread.Sleep(1000);
                             }
 
-                           PublishClockEvent(DateTime.Now);
+                            PublishClockEvent(DateTime.Now);
 
                             // Wait until at least 30 seconds have elapsed since publishing the event.
                             // If we release the mutex too early, then the discrepancy between each
                             // server's clocks will cause duplicate clock events.
-                           var waitTime = DateTime.Now.AddSeconds(30);
-                           while (DateTime.Now < waitTime)
+                            var waitTime = DateTime.Now.AddSeconds(30);
+                            while (DateTime.Now < waitTime)
                             {
-                               Thread.Sleep(1000);
+                                Thread.Sleep(1000);
                             }
 
-                           Configuration.Database().ReleaseMutex(mutex);
+                            Configuration.Database().ReleaseMutex(mutex);
                         }
                         // ReSharper disable once EmptyGeneralCatchClause
                         catch
@@ -900,7 +900,7 @@ namespace Spoke
                     }
                     // ReSharper disable once FunctionNeverReturns
                     // We intentioanlly leave this thread running forever to continue to generate clock events.
-               });
+                });
             }
 
             public static void StartWorkerThreads()
@@ -909,27 +909,27 @@ namespace Spoke
                 {
                     Task.Run(() =>
                     {
-                       while (true)
-                       {
-                           try
-                           {
-                               Action action;
+                        while (true)
+                        {
+                            try
+                            {
+                                Action action;
 
-                               if (WorkerQueue.TryDequeue(out action))
-                               {
-                                   action();
-                               }
-                               else
-                               {
-                                   ResetEvent.WaitOne();
-                               }
-                           }
-                           catch
-                           {
+                                if (WorkerQueue.TryDequeue(out action))
+                                {
+                                    action();
+                                }
+                                else
+                                {
+                                    ResetEvent.WaitOne();
+                                }
+                            }
+                            catch
+                            {
 
-                               throw;
-                           }
-                       }
+                                throw;
+                            }
+                        }
                     });
                 }
             }
@@ -947,13 +947,13 @@ namespace Spoke
             {
                 Task.Run(() =>
                 {
-                   var events = GetFailedEvents(lookbackMinutes, lookbackUpToMinutes).Events;
+                    var events = GetFailedEvents(lookbackMinutes, lookbackUpToMinutes).Events;
 
-                   foreach (var @event in events)
+                    foreach (var @event in events)
                     {
-                       ProcessEvent(@event.EventId, null);
+                        ProcessEvent(@event.EventId, null);
                     }
-               });
+                });
 
                 return new Models.TaskResponse
                 {
@@ -984,8 +984,8 @@ namespace Spoke
                         , lookbackUpToMinutes ?? Configuration.FailedNotificationsThresholdMinutes
                         );
 
-                   ProcessNotifications(notifications.SubscriptionNotifications);
-               });
+                    ProcessNotifications(notifications.SubscriptionNotifications);
+                });
 
                 return new Models.TaskResponse
                 {
@@ -1077,18 +1077,18 @@ namespace Spoke
                     Action<dynamic> onComplete,
                     TimeSpan? timeout = null)
             {
-                QueueAction(() =>
+                Task.Run(() =>
                 {
                     var mutexKey =
-                        $"event-{notification.EventSubscription.EventId}-subscription-{notification.EventSubscription.SubscriptionId}";
+                                $"event-{notification.EventSubscription.EventId}-subscription-{notification.EventSubscription.SubscriptionId}";
 
-                   ExceptionWrapper<object>(() =>
+                    ExceptionWrapper<object>(() =>
                     {
-                       var mutex = Configuration.Database().TryAcquireMutex(mutexKey,
+                        var mutex = Configuration.Database().TryAcquireMutex(mutexKey,
                             TimeSpan.FromMinutes(
                                Configuration.EventSubscriptionMutexTimeToLiveMinutes.ToInt()));
 
-                       if (mutex == null)
+                        if (mutex == null)
                         {
                             LogEventSubscriptionActivity(
                                 notification.EventSubscription.Event.EventId,
@@ -1097,7 +1097,7 @@ namespace Spoke
                                 new
                                 {
                                     Notification = notification
-                               });
+                                });
 
                             return null;
                         }
@@ -1108,7 +1108,7 @@ namespace Spoke
                             Utils.EventSubscriptionActivityTypeCode.SubscriptionResponseOk,
                            null);
 
-                       if (fulfilledActivities.Any())
+                        if (fulfilledActivities.Any())
                         {
                             LogEventSubscriptionActivity(
                                 notification.EventSubscription.Event.EventId,
@@ -1118,37 +1118,37 @@ namespace Spoke
                                 {
                                     PreviouslyFulfilled = fulfilledActivities,
                                     Notification = notification
-                               });
+                                });
 
                             return null;
                         }
 
-                       if (timeout != null)
+                        if (timeout != null)
                         {
-                           Thread.Sleep(timeout.Value);
+                            Thread.Sleep(timeout.Value);
                         }
 
-                            Models.HttpResponse response;
+                        Models.HttpResponse response;
 
-                           switch (notification.EventSubscription.Subscription.RequestType)
-                            {
-                                case "PARAMETERS":
-                                   response = HttpPostParameters(notification.Uri, Configuration.JsonSerializer.Deserialize<Dictionary<string, string>>((string)notification.Payload).ToNameValueCollection());
-                                    break;
-                                case "QUERY_STRING":
-                                   response = HttpGet(notification.Uri, Configuration.JsonSerializer.Deserialize<Dictionary<string, string>>((string)notification.Payload).ToNameValueCollection());
-                                    break;
-                                case null:
-                                case "OBJECT":
-                                   response = HttpPostObject(notification.Uri, notification.Payload.ToString());
-                                    break;
-                                default:
-                                   throw new Exception("Request type does not exist!");
-                            }
+                        switch (notification.EventSubscription.Subscription.RequestType)
+                        {
+                            case "PARAMETERS":
+                                response = HttpPostParameters(notification.Uri, Configuration.JsonSerializer.Deserialize<Dictionary<string, string>>((string)notification.Payload).ToNameValueCollection());
+                                break;
+                            case "QUERY_STRING":
+                                response = HttpGet(notification.Uri, Configuration.JsonSerializer.Deserialize<Dictionary<string, string>>((string)notification.Payload).ToNameValueCollection());
+                                break;
+                            case null:
+                            case "OBJECT":
+                                response = HttpPostObject(notification.Uri, notification.Payload.ToString());
+                                break;
+                            default:
+                                throw new Exception("Request type does not exist!");
+                        }
 
-                           Configuration.Database().ReleaseMutex(mutex);
+                        Configuration.Database().ReleaseMutex(mutex);
 
-                       onComplete(response);
+                        onComplete(response);
 
                         LogEventSubscriptionActivity(
                             notification.EventSubscription.Event.EventId,
@@ -1163,7 +1163,7 @@ namespace Spoke
                         notification.EventSubscription.EventSubscriptionId,
                         mutexKey,
                        true);
-               });
+                });
             }
 
             /// <summary>
@@ -1251,7 +1251,7 @@ namespace Spoke
                     }
                 }
 
-                return new Models.SubscriptionNotificationsResponse {  SubscriptionNotifications = notifications};
+                return new Models.SubscriptionNotificationsResponse { SubscriptionNotifications = notifications };
             }
 
             /// <summary>
@@ -1746,7 +1746,7 @@ function processTransform(eventData, topicData) {{
 
                 return result.ToString();
             }
-            
+
             /// <summary>
             /// Determine if the response was successful based on the api type.
             /// </summary>
@@ -2119,7 +2119,7 @@ function processTransform(eventData, topicData) {{
                 public bool Matches;
             }
         }
-        
+
         /// <summary>
         /// ISpokeDatabase, SQL database implementation
         /// </summary>
@@ -3069,7 +3069,7 @@ IF OBJECT_ID('tempdb..#tmp3') IS NOT NULL
                                 x.CreateDate,
                                 x.CreatedByApplication,
                                 x.CreatedByUser
-                          }).ToList(), "dbo.EventSubscription");
+                            }).ToList(), "dbo.EventSubscription");
 
                     var ids = cmd.ExecuteToList<long>();
 
@@ -3532,10 +3532,10 @@ IF @result IN ( 0, 1 )
             return topics.Select(topic =>
                 new Spoke.Models.SubscriptionTopic
                 {
-                   Key = NormalizeKey(topic.Key),
+                    Key = NormalizeKey(topic.Key),
                     Value = topic.Value,
                     OperatorTypeCode = topic.OperatorTypeCode
-               }).ToList();
+                }).ToList();
         }
 
         /// <summary>
