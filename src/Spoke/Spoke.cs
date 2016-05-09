@@ -1039,6 +1039,27 @@ namespace Spoke
                string mutexKey,
                bool retry)
             {
+                return ExceptionWrapperAsync( () => Task.FromResult( method() ), eventId, eventSubscriptionId, mutexKey, retry )
+                    .Result;
+            }
+
+            /// <summary>
+            /// Wrapper to handle exceptions during a function call.
+            /// </summary>
+            /// <typeparam name="T"></typeparam>
+            /// <param name="method">The function being called.</param>
+            /// <param name="eventId">The id of the event.</param>
+            /// <param name="eventSubscriptionId">The id of the event subscription.</param>
+            /// <param name="mutexKey">The mutex key to acquire a mutex.</param>
+            /// <param name="retry">Whether or not to retry.</param>
+            /// <returns><see cref="Task{Models.ExceptionWrapperResult{T}}"/></returns>
+            private static async Task<Models.ExceptionWrapperResult<T>> ExceptionWrapperAsync<T>(
+               Func<Task<T>> method,
+               object eventId,
+               object eventSubscriptionId,
+               string mutexKey,
+               bool retry)
+            {
                 var timeoutMinutes = Configuration.DefaultAbortAfterMinutes.ToInt();
 
                 var startTime = DateTime.Now;
@@ -1174,6 +1195,12 @@ namespace Spoke
                             notification.EventSubscription.EventSubscriptionId,
                             Utils.EventSubscriptionActivityTypeCode.SubscriptionRequestSent,
                            notification);
+
+                        var response = await responseTask;
+
+                        Configuration.Database().ReleaseMutex( mutex );
+
+                        onComplete( response );
 
                         var response = await responseTask;
 
@@ -2122,8 +2149,8 @@ function processTransform(eventData, topicData) {{
             public class SubscriptionNotificationResponse
             {
                 public SubscriptionNotification SubscriptionNotification;
-            }
-
+        }
+        
             public class EventTopicsResponse
             {
                 public List<EventTopic> EventTopics;
