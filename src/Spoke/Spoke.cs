@@ -179,7 +179,7 @@ namespace Spoke
                     Models.SubscriptionStatusCodes.Active,
                     serviceEndPoint,
                     string.IsNullOrWhiteSpace(serviceTypeCode)
-                        ? "DEFAULT"
+                        ? "DEFAULT" 
                         : serviceTypeCode,
                     httpMethod,
                     transformFunction,
@@ -224,13 +224,13 @@ namespace Spoke
                 var subscription = GetSubscription(subscriptionId, subscriptionName).Subscription;
 
                 return InternalApi.SaveSubscription(
-                     subscriptionId,
+                    subscriptionId,
                      subscriptionName ?? subscription.SubscriptionName,
-                     Models.SubscriptionStatusCodes.Active,
+                    Models.SubscriptionStatusCodes.Active,
                      serviceEndPoint ?? subscription.ApiEndpoint,
                      string.IsNullOrWhiteSpace(serviceTypeCode)
                          ? subscription.ApiType
-                         : serviceTypeCode,
+                        : serviceTypeCode,
                      httpMethod ?? subscription.HttpMethod,
                      (transformFunction ?? subscription.TransformFunction) == "CLEAR"
                          ? null
@@ -238,11 +238,11 @@ namespace Spoke
                      abortAfterMinutes ?? subscription.AbortAfterMinutes,
                      topics != null
                          ? topics.Select(
-                         t => new Models.SubscriptionTopic
-                         {
-                             Key = t.Key,
-                             Value = t.Value,
-                             OperatorTypeCode = t.OperatorTypeCode
+                        t => new Models.SubscriptionTopic
+                        {
+                            Key = t.Key,
+                            Value = t.Value,
+                            OperatorTypeCode = t.OperatorTypeCode
                          }).ToList()
                          : subscription.Topics,
                      requestType ?? subscription.RequestType);
@@ -268,7 +268,7 @@ namespace Spoke
                     Subscription = subscription.Subscription
                 };
             }
-
+            
             /// <summary>
             /// Soft delete a current subscription. This will update the status of the subscription to deleted which is similar to setting one to inactive.
             /// </summary>
@@ -647,7 +647,7 @@ namespace Spoke
                     else
                     {
                         notifications.Add(GenerateSubscriptionNotification(
-                             eventId,
+                            eventId,
                             subscription).SubscriptionNotification);
 
                         activityTypeCode = Utils.EventSubscriptionActivityTypeCode.InvokeServiceRequestGenerated;
@@ -1018,6 +1018,27 @@ namespace Spoke
                string mutexKey,
                bool retry)
             {
+                return ExceptionWrapperAsync( () => Task.FromResult( method() ), eventId, eventSubscriptionId, mutexKey, retry )
+                    .Result;
+            }
+
+            /// <summary>
+            /// Wrapper to handle exceptions during a function call.
+            /// </summary>
+            /// <typeparam name="T"></typeparam>
+            /// <param name="method">The function being called.</param>
+            /// <param name="eventId">The id of the event.</param>
+            /// <param name="eventSubscriptionId">The id of the event subscription.</param>
+            /// <param name="mutexKey">The mutex key to acquire a mutex.</param>
+            /// <param name="retry">Whether or not to retry.</param>
+            /// <returns><see cref="Task{Models.ExceptionWrapperResult{T}}"/></returns>
+            private static async Task<Models.ExceptionWrapperResult<T>> ExceptionWrapperAsync<T>(
+               Func<Task<T>> method,
+               object eventId,
+               object eventSubscriptionId,
+               string mutexKey,
+               bool retry)
+            {
                 var timeoutMinutes = Configuration.DefaultAbortAfterMinutes.ToInt();
 
                 var startTime = DateTime.Now;
@@ -1032,7 +1053,7 @@ namespace Spoke
                     {
                         return new Models.ExceptionWrapperResult<T>
                         {
-                            Result = method()
+                            Result = await method()
                         };
                     }
                     catch (Exception ex)
@@ -1055,7 +1076,7 @@ namespace Spoke
                         if (!retry)
                             break;
 
-                        Thread.Sleep(currentWaitTime);
+                        await Task.Delay( currentWaitTime );
                         currentWaitTime = currentWaitTime + currentWaitTime;
                     }
                 }
@@ -1077,12 +1098,13 @@ namespace Spoke
                     Action<dynamic> onComplete,
                     TimeSpan? timeout = null)
             {
-                Task.Run(() =>
+                Task.Run( async () =>
                 {
                     var mutexKey =
-                                $"event-{notification.EventSubscription.EventId}-subscription-{notification.EventSubscription.SubscriptionId}";
+                        $"event-{notification.EventSubscription.EventId}-subscription-{notification.EventSubscription.SubscriptionId}";
 
-                    ExceptionWrapper<object>(() =>
+
+                    await ExceptionWrapperAsync<object>( async () =>
                     {
                         var mutex = Configuration.Database().TryAcquireMutex(mutexKey,
                             TimeSpan.FromMinutes(
@@ -1125,36 +1147,39 @@ namespace Spoke
 
                         if (timeout != null)
                         {
-                            Thread.Sleep(timeout.Value);
+                            await Task.Delay( timeout.Value );
                         }
 
-                        Models.HttpResponse response;
+                        // Just capture the http response task so that we can log the activity prior to awaiting the result.
+                        Task<Models.HttpResponse> responseTask;
 
                         switch (notification.EventSubscription.Subscription.RequestType)
-                        {
-                            case "PARAMETERS":
-                                response = HttpPostParameters(notification.Uri, Configuration.JsonSerializer.Deserialize<Dictionary<string, string>>((string)notification.Payload).ToNameValueCollection());
-                                break;
-                            case "QUERY_STRING":
-                                response = HttpGet(notification.Uri, Configuration.JsonSerializer.Deserialize<Dictionary<string, string>>((string)notification.Payload).ToNameValueCollection());
-                                break;
-                            case null:
-                            case "OBJECT":
-                                response = HttpPostObject(notification.Uri, notification.Payload.ToString());
-                                break;
-                            default:
+                            {
+                                case "PARAMETERS":
+                                responseTask = HttpPostParametersAsync( notification.Uri, Configuration.JsonSerializer.Deserialize<Dictionary<string, string>>( (string)notification.Payload ).ToNameValueCollection() );
+                                    break;
+                                case "QUERY_STRING":
+                                responseTask = HttpGetAsync( notification.Uri, Configuration.JsonSerializer.Deserialize<Dictionary<string, string>>( (string)notification.Payload ).ToNameValueCollection() );
+                                    break;
+                                case null:
+                                case "OBJECT":
+                                responseTask = HttpPostObjectAsync( notification.Uri, notification.Payload.ToString() );
+                                    break;
+                                default:
                                 throw new Exception("Request type does not exist!");
-                        }
-
-                        Configuration.Database().ReleaseMutex(mutex);
-
-                        onComplete(response);
+                            }
 
                         LogEventSubscriptionActivity(
                             notification.EventSubscription.Event.EventId,
                             notification.EventSubscription.EventSubscriptionId,
                             Utils.EventSubscriptionActivityTypeCode.SubscriptionRequestSent,
                            notification);
+
+                        var response = await responseTask;
+
+                        Configuration.Database().ReleaseMutex( mutex );
+
+                        onComplete( response );
 
                         // placeholder until this gets refactored
                         return null;
@@ -1336,7 +1361,7 @@ namespace Spoke
             /// <param name="url">The url.</param>
             /// <param name="parameters"><see cref="NameValueCollection"/> of the parameters</param>
             /// <returns><see cref="Models.HttpResponse"/></returns>
-            private static Models.HttpResponse HttpGet(string url, NameValueCollection parameters)
+            private static async Task<Models.HttpResponse> HttpGetAsync( string url, NameValueCollection parameters )
             {
                 var sw = new Stopwatch();
 
@@ -1348,7 +1373,7 @@ namespace Spoke
                     {
                         sw.Start();
                         webClient.QueryString = parameters;
-                        response = webClient.DownloadString(url);
+                        response = await webClient.DownloadStringTaskAsync( url );
                         sw.Stop();
                     }
 
@@ -1400,7 +1425,7 @@ namespace Spoke
             /// <param name="url">The url.</param>
             /// <param name="data">Serialized data for the request.</param>
             /// <returns><see cref="Models.HttpResponse"/></returns>
-            private static Models.HttpResponse HttpPostObject(string url, string data)
+            private static async Task<Models.HttpResponse> HttpPostObjectAsync( string url, string data )
             {
                 var sw = new Stopwatch();
 
@@ -1411,7 +1436,7 @@ namespace Spoke
                     using (var webClient = new Models.WebClientNoKeepAlive())
                     {
                         sw.Start();
-                        response = webClient.UploadString(url, data);
+                        response = await webClient.UploadStringTaskAsync( url, data );
                         sw.Stop();
                     }
 
@@ -1463,7 +1488,7 @@ namespace Spoke
             /// <param name="url">The url.</param>
             /// <param name="parameters"><see cref="NameValueCollection"/> of the parameters</param>
             /// <returns><see cref="Models.HttpResponse"/></returns>
-            private static Models.HttpResponse HttpPostParameters(string url, NameValueCollection parameters)
+            private static async Task<Models.HttpResponse> HttpPostParametersAsync( string url, NameValueCollection parameters )
             {
                 var sw = new Stopwatch();
 
@@ -1474,7 +1499,7 @@ namespace Spoke
                     using (var webClient = new Models.WebClientNoKeepAlive())
                     {
                         sw.Start();
-                        response = Encoding.UTF8.GetString(webClient.UploadValues(url, parameters));
+                        response = Encoding.UTF8.GetString( await webClient.UploadValuesTaskAsync( url, parameters ) );
                         sw.Stop();
                     }
 
@@ -1746,7 +1771,7 @@ function processTransform(eventData, topicData) {{
 
                 return result.ToString();
             }
-
+            
             /// <summary>
             /// Determine if the response was successful based on the api type.
             /// </summary>
@@ -2119,7 +2144,7 @@ function processTransform(eventData, topicData) {{
                 public bool Matches;
             }
         }
-
+        
         /// <summary>
         /// ISpokeDatabase, SQL database implementation
         /// </summary>
@@ -2418,24 +2443,11 @@ INNER JOIN dbo.EventTopic T2 ON T2.EventId = E.EventId
 
                     var dbResult = cmd.ExecuteToDynamicList();
 
-                    var distinctEvents = new Dictionary<long, List<dynamic>>();
-
-                    foreach (var @event in dbResult)
-                    {
-                        var eventId = Convert.ToInt64(@event.EventId);
-
-                        if (distinctEvents.ContainsKey(eventId))
-                            distinctEvents[eventId].Add(@event);
-                        else
-                            distinctEvents.Add(eventId, new List<dynamic> { @event });
-                    }
-
-                    var events = new ConcurrentBag<Models.Event>();
-
-                    Parallel.ForEach(distinctEvents, new ParallelOptions { MaxDegreeOfParallelism = 8 },
-                        @event => events.Add(ToEvent(@event.Value)));
-
-                    return events.OrderByDescending(x => x.EventId).ToList();
+                    return dbResult
+                        .GroupBy( @event => Convert.ToInt64( @event.EventId ) )
+                        .Select( @event => ToEvent( @event.ToList() ) )
+                        .OrderByDescending( x => x.EventId )
+                        .ToList();
                 }
 
                 /// <summary>
@@ -2673,21 +2685,15 @@ WHERE
                     if (!dbResult.Any())
                         return new List<Models.EventSubscription>();
 
-                    var eventSubscriptions = new ConcurrentBag<Models.EventSubscription>();
+                    var eventSubscriptions = new List<Models.EventSubscription>();
 
-                    Parallel.ForEach(dbResult.Select(x => x.EventId).Distinct(),
-                        new ParallelOptions { MaxDegreeOfParallelism = 8 },
-                        x =>
+                    foreach (var data in dbResult.GroupBy(x => x.EventId))
                         {
-                            var data = dbResult.Where(y => y.EventId == x).ToList();
-
-                            foreach (var subscription in data.Select(z => z.SubscriptionId).Distinct())
+                        foreach (var subscriptionData in data.GroupBy(z => z.SubscriptionId))
                             {
-                                var subscriptionData = data.Where(d => d.SubscriptionId == subscription).ToList();
-
                                 var first = subscriptionData.First();
 
-                                eventSubscriptions.Add(new Models.EventSubscription
+                            eventSubscriptions.Add(new Models.EventSubscription
                                 {
                                     EventSubscriptionId = first.EventSubscriptionId,
                                     EventId = first.EventId,
@@ -2696,18 +2702,19 @@ WHERE
                                     CreateDate = first.EsCreateDate,
                                     CreatedByApplication = first.EsCreatedByApplication,
                                     CreatedByUser = first.EsCreatedByUser,
-                                    Event = ToEvent(subscriptionData)
-                                });
+                                Event = ToEvent(subscriptionData.ToList())
+                            });
                             }
                         }
-                    );
 
                     var subscriptions = GetSubscriptions(true, null, null);
 
-                    Parallel.ForEach(eventSubscriptions, new ParallelOptions { MaxDegreeOfParallelism = 8 },
-                        x => x.Subscription = subscriptions.FirstOrDefault(s => Convert.ToInt32(s.SubscriptionId) == Convert.ToInt32(x.SubscriptionId)));
+                    foreach (var eventSubscription in eventSubscriptions)
+                    {
+                        eventSubscription.Subscription = subscriptions.FirstOrDefault( s => Convert.ToInt32( s.SubscriptionId ) == Convert.ToInt32( eventSubscription.SubscriptionId ) );
+                    }
 
-                    return eventSubscriptions.ToList();
+                    return eventSubscriptions;
                 }
 
                 /// <summary>
