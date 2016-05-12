@@ -1200,16 +1200,15 @@ namespace Spoke
             private static Models.SubscriptionsResponse GetMatchingSubscriptions(IDictionary<string, string> eventTopics,
                 IEnumerable<Models.Subscription> subscriptions)
             {
-                var matchingSubscriptions = new ConcurrentBag<Models.Subscription>();
+                var matchingSubscriptions = new List<Models.Subscription>();
 
-                Parallel.ForEach(subscriptions, new ParallelOptions { MaxDegreeOfParallelism = 8 },
-                    subscription =>
-                    {
-                        if (IsSubscriptionForEvent(eventTopics, subscription.Topics).Matches)
-                            matchingSubscriptions.Add(subscription);
-                    });
+                foreach (var subscription in subscriptions)
+                {
+                    if (IsSubscriptionForEvent(eventTopics, subscription.Topics).Matches)
+                        matchingSubscriptions.Add(subscription);
+                }
 
-                return new Models.SubscriptionsResponse { Subscriptions = matchingSubscriptions.ToList() };
+                return new Models.SubscriptionsResponse { Subscriptions = matchingSubscriptions };
             }
 
             /// <summary>
