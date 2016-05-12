@@ -94,37 +94,48 @@ namespace Spoke
             {
                 if (topics == null)
                     topics = new Dictionary<string, string>();
+
                 if (!topics.ContainsKey("SystemName") && !topics.ContainsKey("SYSTEM_NAME"))
                 {
                     topics.Add("SystemName", systemName);
                 }
+
                 if (!topics.ContainsKey("EventName") && !topics.ContainsKey("EVENT_NAME"))
                 {
                     topics.Add("EventName", eventName);
                 }
+
                 var validTopicKeys = topics.ValidateTopicKeys();
+
                 if (!validTopicKeys)
                 {
                     throw new Exception("Topic keys can only contain alphanumeric and underscore characters.");
                 }
+
                 topics = topics.NormalizeKeys();
+
                 var validTopicValues = topics.ValidateTopicValues();
+
                 if (!validTopicValues)
                 {
                     throw new Exception("Topic values cannot be null.");
                 }
+
                 var @event = new Models.Event
                 {
                     EventPayload = eventPayload,
                     Topics = topics,
                     TopicCount = topics.Count
                 }.Stamp();
+
                 @event = Configuration.Database().SaveEvent(@event, false);
+
                 Task.Run(() =>
                 {
                     InternalApi.SaveEventTopics(@event);
                 })
                 .ContinueWith(x => InternalApi.ProcessEvent(@event.EventId, null));
+
                 return @event;
             }
             /// <summary>	
@@ -169,6 +180,7 @@ namespace Spoke
                             OperatorTypeCode = t.OperatorTypeCode
                         }).ToList(),
                     requestType);
+
                 return new Models.SubscriptionResponse
                 {
                     Subscription = subscription
@@ -218,6 +230,7 @@ namespace Spoke
                             OperatorTypeCode = t.OperatorTypeCode
                         }).ToList(),
                     requestType);
+
                 return new Models.SubscriptionResponse
                 {
                     Subscription = subscription
@@ -237,6 +250,7 @@ namespace Spoke
                 var subscription = InternalApi.SaveSubscriptionStatus(
                     subscriptionId,
                     active ? Models.SubscriptionStatusCodes.Active : Models.SubscriptionStatusCodes.Inactive);
+
                 return new Models.SubscriptionResponse
                 {
                     Subscription = subscription
@@ -256,6 +270,7 @@ namespace Spoke
                     subscriptionId,
                     Models.SubscriptionStatusCodes.Deleted
                      );
+
                 return new Models.SubscriptionResponse
                 {
                     Subscription = subscription
@@ -273,6 +288,7 @@ namespace Spoke
                 )
             {
                 var subscription = Configuration.Database().GetSubscription(subscriptionId, subscriptionName);
+
                 return new Models.GetSubscriptionResponse
                 {
                     Subscription = subscription
@@ -285,6 +301,7 @@ namespace Spoke
             public static Models.EventNamesResponse GetAllEventNames()
             {
                 var eventNames = Configuration.Database().GetAllEventNames();
+
                 return new Models.EventNamesResponse
                 {
                     EventNames = eventNames
@@ -297,6 +314,7 @@ namespace Spoke
             public static Models.TopicKeysResponse GetAllTopicKeys()
             {
                 var topicKeys = Configuration.Database().GetAllTopicKeys();
+
                 return new Models.TopicKeysResponse
                 {
                     TopicKeys = topicKeys
@@ -342,16 +360,19 @@ namespace Spoke
                     "clock-event-backfill",
                     TimeSpan.FromMinutes(Configuration.ClockBackfillMutexTimeToLiveMinutes.ToInt())
                     );
+
                 if (mutex == null)
                 {
                     return new List<Models.ClockEvent>();
                 }
+
                 var missingClockEvents = Configuration.Database().GetMissingClockEvents(totalMinutes, offsetMinutes)
                     .OrderBy(m => m.Year)
                     .ThenBy(m => m.Month)
                     .ThenBy(m => m.Day)
                     .ThenBy(m => m.Hour)
                     .ThenBy(m => m.Minute);
+
                 foreach (var minute in missingClockEvents)
                 {
                     var dt = new DateTime(
@@ -363,7 +384,9 @@ namespace Spoke
                         0);
                     PublishClockEvent(dt);
                 }
+
                 Configuration.Database().ReleaseMutex(mutex);
+
                 return missingClockEvents.ToList();
             }
             /// <summary>	
@@ -390,6 +413,7 @@ namespace Spoke
                             )
             {
                 var @event = Configuration.Database().GetEvent(eventId);
+
                 return new Models.EventResponse
                 {
                     Event = @event
@@ -413,6 +437,7 @@ namespace Spoke
                     eventName,
                     topicKey)
                     .ToList();
+
                 return new Models.EventsResponse
                 {
                     Events = new List<Models.Event>(events)
@@ -428,6 +453,7 @@ namespace Spoke
                 )
             {
                 var eventSubscriptions = Configuration.Database().GetEventSubscriptions(eventId, true);
+
                 return new Models.GetEventSubscriptionsResponse
                 {
                     EventSubscriptions = new List<dynamic>(eventSubscriptions)
@@ -445,6 +471,7 @@ namespace Spoke
                )
             {
                 var events = Configuration.Database().GetFailedEvents(lookbackMinutes, lookbackUpToMinutes);
+
                 return new Models.EventsResponse
                 {
                     Events = new List<Models.Event>(events)
@@ -462,15 +489,20 @@ namespace Spoke
                 )
             {
                 var eventSubscriptions = Configuration.Database().GetFailedEventSubscriptions(lookbackMinutes, lookbackUpToMinutes);
+
                 var subscriptionNotifications = new ConcurrentBag<Models.SubscriptionNotification>();
+
                 Parallel.ForEach(eventSubscriptions.GroupBy(x => x.EventId).Select(x => x.First().Event),
                     new ParallelOptions { MaxDegreeOfParallelism = 8 },
                     @event =>
                     {
                         var subscriptions = eventSubscriptions.Where(x => x.EventId == @event.EventId).Select(x => x.Subscription);
+
                         var notifications = GenerateSubscriptionNotifications(@event, subscriptions);
+
                         notifications.ForEach(subscriptionNotifications.Add);
                     });
+
                 return subscriptionNotifications.ToList();
             }
             /// <summary>	
@@ -487,6 +519,7 @@ namespace Spoke
                 )
             {
                 var activity = Configuration.Database().GetEventSubscriptionActivities(eventId, subscriptionId, null, count ?? 100);
+
                 return new Models.ActivityResponse
                 {
                     Activity = new List<dynamic>(activity)
@@ -501,6 +534,7 @@ namespace Spoke
                  object eventId)
             {
                 var @event = Configuration.Database().GetEvent(eventId);
+
                 return GenerateSubscriptionNotificationsForEvent(@event);
             }
             /// <summary>	
@@ -513,6 +547,7 @@ namespace Spoke
                 )
             {
                 var subscriptions = Configuration.Database().GetSubscriptions(activeOnly);
+
                 return new Models.GetSubscriptionsResponse
                 {
                     Subscriptions = new List<Models.Subscription>(subscriptions)
@@ -529,15 +564,19 @@ namespace Spoke
                 Models.Subscription subscription)
             {
                 var mutexKey = "process-event-" + eventId;
+
                 var @event = Configuration.Database().GetEvent(eventId);
+
                 if (@event.TopicCount != @event.EventTopics.Count)
                 {
                     @event.EventTopics.AddRange(SaveEventTopics(@event));
                 }
+
                 var result = ExceptionWrapper<object>(() =>
                 {
                     var mutex = Configuration.Database().TryAcquireMutex(mutexKey,
                         TimeSpan.FromMinutes(Configuration.EventProcessingMutexTimeToLiveMinutes.ToInt()));
+
                     if (mutex == null)
                     {
                         LogEventSubscriptionActivity(
@@ -549,25 +588,32 @@ namespace Spoke
                                 eventId,
                                 subscription
                             });
+
                         return new
                         {
                             Event = @event,
                             Message = "Event not process: " + Utils.EventSubscriptionActivityTypeCode.EventProcessingMutexCouldNotBeAcquired
                         };
                     }
+
                     var notifications = new List<Models.SubscriptionNotification>();
+
                     string activityTypeCode;
+
                     if (subscription == null)
                     {
                         // generate new notifications and fill them in with any pre-existing eventSubscriptions	
                         notifications = GenerateSubscriptionNotificationsForEvent(eventId)
                             .SetEventSubscriptionIds(Configuration.Database().GetEventSubscriptions(eventId, false));
+
                         // save new EventSubscriptions for any notifications that don't currently have one.	
                         var eventSubscriptions =
                             Configuration.Database().SaveEventSubscriptions(
                                 notifications.Where(x => x.EventSubscription.EventSubscriptionId == null)
                                     .Select(x => x.EventSubscription).ToList());
+
                         notifications = notifications.SetEventSubscriptionIds(eventSubscriptions);
+
                         activityTypeCode = Utils.EventSubscriptionActivityTypeCode.SubscriptionsFound;
                     }
                     else
@@ -575,8 +621,10 @@ namespace Spoke
                         notifications.Add(GenerateSubscriptionNotification(
                             eventId,
                             subscription));
+
                         activityTypeCode = Utils.EventSubscriptionActivityTypeCode.InvokeServiceRequestGenerated;
                     }
+
                     LogEventSubscriptionActivity(
                         eventId,
                         null,
@@ -585,8 +633,11 @@ namespace Spoke
                         {
                             notifications
                         });
+
                     ProcessNotifications(notifications);
+
                     Configuration.Database().ReleaseMutex(mutex);
+
                     return new
                     {
                         Event = @event,
@@ -597,6 +648,7 @@ namespace Spoke
                     null,
                     mutexKey,
                     true);
+
                 return result;
             }
             /// <summary>	
@@ -609,6 +661,7 @@ namespace Spoke
                 foreach (var notification in notifications)
                 {
                     var lNotification = notification;
+
                     ExecuteAsyncNotification(lNotification,
                         response => HandleHttpResponse(
                             response,
@@ -646,7 +699,9 @@ namespace Spoke
                 )
             {
                 var @event = Configuration.Database().GetEvent(eventId);
+
                 @event = ExternalApi.PublishEvent(@event.Topics["SYSTEM_NAME"], @event.Topics["EVENT_NAME"], @event.EventPayload, @event.Topics);
+
                 return new Models.PublishEventResponse
                 {
                     EventId = @event.EventId.ToString(),
@@ -670,6 +725,7 @@ namespace Spoke
                     }.Stamp())
                     .Where(x => @event.EventTopics.All(t => t.Key != x.Key))
                     .ToList();
+
                 return Configuration.Database().SaveEventTopics(eventTopics);
             }
             /// <summary>	
@@ -683,8 +739,10 @@ namespace Spoke
                string subscriptionStatusCode)
             {
                 var subscription = Configuration.Database().GetSubscription(subscriptionId, null);
+
                 if (subscription == null)
                     throw new Exception("Subscription not found");
+
                 return SaveSubscription(
                     subscriptionId,
                     subscription.SubscriptionName,
@@ -727,6 +785,7 @@ namespace Spoke
                 {
                     throw new Exception("You must subscription to at least 1 topic!");
                 }
+
                 var subscription = new Models.Subscription
                 {
                     SubscriptionId = subscriptionId,
@@ -740,6 +799,7 @@ namespace Spoke
                     Topics = topics.NormalizeKeys().Select(x => x.Stamp()).ToList(),
                     RequestType = requestType
                 }.Stamp();
+
                 return Configuration.Database().SaveSubscription(subscription);
             }
             /// <summary>	
@@ -757,25 +817,31 @@ namespace Spoke
                                 ? Configuration.Database().TryAcquireMutex("clock-loop",
                                     TimeSpan.FromMinutes(1).Add(TimeSpan.FromSeconds(30)))
                                 : null;
+
                             if (mutex == null)
                             {
                                 Thread.Sleep(Configuration.ClockSleepMilliseconds ?? 0);
                                 continue;
                             }
+
                             var currentMinute = DateTime.Now.Minute;
+
                             while (DateTime.Now.Minute == currentMinute)
                             {
                                 Thread.Sleep(1000);
                             }
+
                             PublishClockEvent(DateTime.Now);
                             // Wait until at least 30 seconds have elapsed since publishing the event.	
                             // If we release the mutex too early, then the discrepancy between each	
                             // server's clocks will cause duplicate clock events.	
                             var waitTime = DateTime.Now.AddSeconds(30);
+
                             while (DateTime.Now < waitTime)
                             {
                                 Thread.Sleep(1000);
                             }
+
                             Configuration.Database().ReleaseMutex(mutex);
                         }
                         // ReSharper disable once EmptyGeneralCatchClause	
@@ -803,11 +869,13 @@ namespace Spoke
                 Task.Run(() =>
                 {
                     var events = GetFailedEvents(lookbackMinutes, lookbackUpToMinutes).Events;
+
                     foreach (var @event in events)
                     {
                         ProcessEvent(@event.EventId, null);
                     }
                 });
+
                 return new Models.TaskResponse
                 {
                     TaskConfiguration = new
@@ -835,8 +903,10 @@ namespace Spoke
                         lookbackMinutes ?? Configuration.LiveRetryAbortAfterMinutes
                         , lookbackUpToMinutes ?? Configuration.FailedNotificationsThresholdMinutes
                         );
+
                     ProcessNotifications(notifications);
                 });
+
                 return new Models.TaskResponse
                 {
                     TaskConfiguration = new
@@ -871,6 +941,7 @@ namespace Spoke
                 var timeout = TimeSpan.FromMinutes(timeoutMinutes);
                 var currentWaitTime = TimeSpan.FromSeconds(1).Milliseconds;
                 var exceptions = new List<Exception>();
+
                 while (startTime + timeout > DateTime.Now)
                 {
                     try
@@ -887,15 +958,20 @@ namespace Spoke
                             eventSubscriptionId,
                             Utils.EventSubscriptionActivityTypeCode.EventProcessingError,
                             ex);
+
                         if (!string.IsNullOrEmpty(mutexKey))
                         {
                             var mutex = Configuration.Database().GetActiveMutex(mutexKey);
                             Configuration.Database().ReleaseMutex(mutex);
                         }
+
                         exceptions.Add(ex);
+
                         if (!retry)
                             break;
+
                         Thread.Sleep(currentWaitTime);
+
                         currentWaitTime = currentWaitTime + currentWaitTime;
                     }
                 }
@@ -924,6 +1000,7 @@ namespace Spoke
                         var mutex = Configuration.Database().TryAcquireMutex(mutexKey,
                             TimeSpan.FromMinutes(
                                 Configuration.EventSubscriptionMutexTimeToLiveMinutes.ToInt()));
+
                         if (mutex == null)
                         {
                             LogEventSubscriptionActivity(
@@ -934,13 +1011,16 @@ namespace Spoke
                                 {
                                     Notification = notification
                                 });
+
                             return null;
                         }
+
                         var fulfilledActivities = Configuration.Database().GetEventSubscriptionActivities(
                             notification.EventSubscription.Event.EventId,
                             notification.EventSubscription.Subscription.SubscriptionId,
                             Utils.EventSubscriptionActivityTypeCode.SubscriptionResponseOk,
                             null);
+
                         if (fulfilledActivities.Any())
                         {
                             LogEventSubscriptionActivity(
@@ -954,10 +1034,12 @@ namespace Spoke
                                 });
                             return null;
                         }
+
                         if (timeout != null)
                         {
                             Thread.Sleep(timeout.Value);
                         }
+
                         Task.Run(() =>
                         {
                             Models.HttpResponse response;
@@ -976,9 +1058,12 @@ namespace Spoke
                                 default:
                                     throw new Exception("Request type does not exist!");
                             }
+
                             Configuration.Database().ReleaseMutex(mutex);
+
                             onComplete(response);
                         });
+
                         LogEventSubscriptionActivity(
                             notification.EventSubscription.Event.EventId,
                             notification.EventSubscription.EventSubscriptionId,
@@ -1003,12 +1088,14 @@ namespace Spoke
                 IEnumerable<Models.Subscription> subscriptions)
             {
                 var matchingSubscriptions = new ConcurrentBag<Models.Subscription>();
+
                 Parallel.ForEach(subscriptions, new ParallelOptions { MaxDegreeOfParallelism = 8 },
                     subscription =>
                     {
                         if (IsSubscriptionForEvent(eventTopics, subscription.Topics))
                             matchingSubscriptions.Add(subscription);
                     });
+
                 return matchingSubscriptions.ToList();
             }
             /// <summary>	
@@ -1022,6 +1109,7 @@ namespace Spoke
                 IEnumerable<Models.Subscription> subscriptions)
             {
                 var notifications = new List<Models.SubscriptionNotification>();
+
                 foreach (var subscription in subscriptions)
                 {
                     var uri = Configuration.GetApiUri != null
@@ -1032,6 +1120,7 @@ namespace Spoke
                                 ApiType = subscription.ApiType
                             })
                         : subscription.ApiEndpoint;
+
                     try
                     {
                         var transformOutput = ProcessTransform(
@@ -1040,10 +1129,12 @@ namespace Spoke
                             subscription.RequestType);
                         var liveRetryAbortAfterMinutes = subscription.AbortAfterMinutes ??
                                                          Configuration.DefaultAbortAfterMinutes ?? 0;
+
                         if (liveRetryAbortAfterMinutes > (Configuration.LiveRetryAbortAfterMinutes ?? 0))
                         {
                             liveRetryAbortAfterMinutes = Configuration.LiveRetryAbortAfterMinutes ?? 0;
                         }
+
                         notifications.Add(
                             new Models.SubscriptionNotification
                             {
@@ -1069,6 +1160,7 @@ namespace Spoke
                             ex);
                     }
                 }
+
                 return notifications;
             }
             /// <summary>	
@@ -1082,6 +1174,7 @@ namespace Spoke
                  Models.Subscription subscription)
             {
                 var @event = Configuration.Database().GetEvent(eventId);
+
                 return GenerateSubscriptionNotification(
                     @event,
                     subscription);
@@ -1095,6 +1188,7 @@ namespace Spoke
                 Models.Event @event)
             {
                 var subscriptions = Configuration.Database().GetSubscriptions(true);
+
                 return GenerateSubscriptionNotifications(
                     @event,
                     GetMatchingSubscriptions(@event.Topics, subscriptions));
@@ -1111,6 +1205,7 @@ namespace Spoke
                 TimeSpan? backoffTime = null)
             {
                 var successful = ResponseIsSuccessful(response, notification.EventSubscription.Subscription.ApiType);
+
                 LogEventSubscriptionActivity(
                     notification.EventSubscription.Event.EventId,
                     notification.EventSubscription.EventSubscriptionId,
@@ -1122,6 +1217,7 @@ namespace Spoke
                         response,
                         notification
                     });
+
                 if (!successful && DateTime.Now < notification.LiveRetryExpirationTime)
                 {
                     backoffTime = backoffTime?.Add(backoffTime.Value) ?? TimeSpan.FromSeconds(1);
@@ -1145,6 +1241,7 @@ namespace Spoke
                 try
                 {
                     string response;
+
                     using (var webClient = new Models.WebClientNoKeepAlive())
                     {
                         sw.Start();
@@ -1152,12 +1249,15 @@ namespace Spoke
                         response = webClient.DownloadString(url);
                         sw.Stop();
                     }
+
                     if (string.IsNullOrEmpty(response))
                         throw new Exception("Invalid url");
+
                     var obj = Configuration.JsonSerializer.Deserialize<dynamic>(response);
                     // The HTTP Response Status is only returned when there is	
                     // an exception (i.e. it is not a 200), so we set it oursevles.	
                     obj.StatusCode = HttpStatusCode.OK;
+
                     return new Models.HttpResponse
                     {
                         Response = obj,
@@ -1168,6 +1268,7 @@ namespace Spoke
                 {
                     if (sw.IsRunning)
                         sw.Stop();
+
                     return new Models.HttpResponse
                     {
                         Response = ex.Response,
@@ -1179,6 +1280,7 @@ namespace Spoke
                 {
                     if (sw.IsRunning)
                         sw.Stop();
+
                     return new Models.HttpResponse
                     {
                         Exception = ex,
@@ -1195,9 +1297,11 @@ namespace Spoke
             private static Models.HttpResponse HttpPostObject(string url, string data)
             {
                 var sw = new Stopwatch();
+
                 try
                 {
                     string response;
+
                     using (var webClient = new Models.WebClientNoKeepAlive())
                     {
                         sw.Start();
@@ -1206,10 +1310,12 @@ namespace Spoke
                     }
                     if (string.IsNullOrEmpty(response))
                         throw new Exception("Invalid url");
+
                     var obj = Configuration.JsonSerializer.Deserialize<dynamic>(response);
                     // The HTTP Response Status is only returned when there is	
                     // an exception (i.e. it is not a 200), so we set it oursevles.	
                     obj.StatusCode = HttpStatusCode.OK;
+
                     return new Models.HttpResponse
                     {
                         Response = obj,
@@ -1220,6 +1326,7 @@ namespace Spoke
                 {
                     if (sw.IsRunning)
                         sw.Stop();
+
                     return new Models.HttpResponse
                     {
                         Response = ex.Response,
@@ -1231,6 +1338,7 @@ namespace Spoke
                 {
                     if (sw.IsRunning)
                         sw.Stop();
+
                     return new Models.HttpResponse
                     {
                         Exception = ex,
@@ -1247,21 +1355,26 @@ namespace Spoke
             private static Models.HttpResponse HttpPostParameters(string url, NameValueCollection parameters)
             {
                 var sw = new Stopwatch();
+
                 try
                 {
                     string response;
+
                     using (var webClient = new Models.WebClientNoKeepAlive())
                     {
                         sw.Start();
                         response = Encoding.UTF8.GetString(webClient.UploadValues(url, parameters));
                         sw.Stop();
                     }
+
                     if (string.IsNullOrEmpty(response))
                         throw new Exception("Invalid url");
+
                     var obj = Configuration.JsonSerializer.Deserialize<dynamic>(response);
                     // The HTTP Response Status is only returned when there is	
                     // an exception (i.e. it is not a 200), so we set it oursevles.	
                     obj.StatusCode = HttpStatusCode.OK;
+
                     return new Models.HttpResponse
                     {
                         Response = obj,
@@ -1272,6 +1385,7 @@ namespace Spoke
                 {
                     if (sw.IsRunning)
                         sw.Stop();
+
                     return new Models.HttpResponse
                     {
                         Response = ex.Response,
@@ -1283,6 +1397,7 @@ namespace Spoke
                 {
                     if (sw.IsRunning)
                         sw.Stop();
+
                     return new Models.HttpResponse
                     {
                         Exception = ex,
@@ -1300,6 +1415,7 @@ namespace Spoke
                 IEnumerable<Models.SubscriptionTopic> subscriptionTopics)
             {
                 var matches = true;
+
                 foreach (var subscriptionTopic in subscriptionTopics)
                 {
                     if (!eventTopics.ContainsKey(subscriptionTopic.Key))
@@ -1307,7 +1423,9 @@ namespace Spoke
                         matches = false;
                         break;
                     }
+
                     var operatorString = subscriptionTopic.OperatorTypeCode.ToUpper();
+
                     if (operatorString == Utils.Operator.Equal)
                     {
                         if (eventTopics[subscriptionTopic.Key].ToUpper() != subscriptionTopic.Value.ToUpper())
@@ -1316,6 +1434,7 @@ namespace Spoke
                             break;
                         }
                     }
+
                     if (operatorString == Utils.Operator.Like)
                     {
                         if (!eventTopics[subscriptionTopic.Key].Contains(subscriptionTopic.Value))
@@ -1324,6 +1443,7 @@ namespace Spoke
                             break;
                         }
                     }
+
                     if (operatorString == Utils.Operator.In)
                     {
                         var subscriptionTopicValues = subscriptionTopic.Value.Split(',').Select(v => v.Trim());
@@ -1333,6 +1453,7 @@ namespace Spoke
                             break;
                         }
                     }
+
                     if (operatorString == Utils.Operator.NotIn)
                     {
                         var subscriptionTopicValues = subscriptionTopic.Value.Split(',').Select(v => v.Trim());
@@ -1343,6 +1464,7 @@ namespace Spoke
                         }
                     }
                 }
+
                 return matches;
             }
             /// <summary>	
@@ -1361,6 +1483,7 @@ namespace Spoke
                     ActivityTypeCode = activityTypeCode,
                     ActivityData = new { activityData, Configuration }
                 }.Stamp();
+
                 Configuration.Database().SaveEventSubscriptionActivity(activity);
             }
             /// <summary>	
@@ -1373,10 +1496,12 @@ namespace Spoke
             private static string ProcessTransform(string transform, Models.Event @event, string requestType)
             {
                 object eventPayload = @event.EventPayload;
+
                 if (eventPayload == null)
                 {
                     eventPayload = new object();
                 }
+
                 #region Javascript Setup	
                 // All curly brackets need to be escaped by doubling the brackets since	
                 // we are using String.Format	
@@ -1388,12 +1513,14 @@ function isArray(object) {{
   }}	
   return retVal;	
 }}	
+
 function isObject(val) {{	
   if (val === null) {{	
     return false;	
   }}	
   return ((typeof val === 'function') || (typeof val === 'object'));	
 }}	
+
 function convertObjectToQueryString(obj) {{	
   var str = '';	
   for (var key in obj) {{	
@@ -1410,6 +1537,7 @@ function convertObjectToQueryString(obj) {{
     }}	
     return str;	
 }}	
+
 function convertObjectToNameValueCollection(obj) {{	
   var fullStr = '';	
   fullStr += '{{ ';	
@@ -1428,19 +1556,23 @@ fullStr += str;
  
   return fullStr;	
 }}	
+
 function isEmptyObject(obj) {{	
   for (var name in obj) {{	
     return false;	
   }}	
   return true;	
 }}	
+
 function toDateString(date) {{	
   return ToDateString(date.getFullYear(), date.getMonth() + 1, date.getDate());	
 }}	
+
 function addDays(date, numberOfDays) {{	
   date.setDate(date.getDate() + numberOfDays);	
   return date;	
 }}	
+
 function processTransform(eventData, topicData) {{	
   var requestObj = JSON.parse(eventData);	
   topicData = JSON.parse(topicData);	
@@ -1461,6 +1593,7 @@ function processTransform(eventData, topicData) {{
 ";
                 #endregion Javascript Setup	
                 var engine = new Engine();
+
                 var result = engine.Execute(string.Format(script, string.IsNullOrEmpty(transform) ? string.Empty : transform))
                     .SetValue("requestType", string.IsNullOrEmpty(requestType) ? "OBJECT" : requestType)
                     .SetValue("eventData", Configuration.JsonSerializer.Serialize(eventPayload))
@@ -1470,6 +1603,7 @@ function processTransform(eventData, topicData) {{
                     .SetValue("spokeInstanceName", Configuration.AppName)
                     .Execute("processTransform(eventData, topicData)")
                     .GetCompletionValue();
+
                 return result.ToString();
             }
 
@@ -1486,12 +1620,14 @@ function processTransform(eventData, topicData) {{
                     HttpResponse = response,
                     ApiType = apiType
                 };
+
                 if (Configuration.WasApiCallSuccessfulHandlers.ContainsKey(apiType))
                 {
                     return Configuration.WasApiCallSuccessfulHandlers[apiType](
                          input
                          );
                 }
+
                 return Configuration.WasApiCallSuccessfulHandlers["DEFAULT"](
                         input
                         );
@@ -1771,10 +1907,12 @@ function processTransform(eventData, topicData) {{
                 protected override WebRequest GetWebRequest(Uri address)
                 {
                     var request = base.GetWebRequest(address);
+
                     if (request is HttpWebRequest)
                     {
                         (request as HttpWebRequest).KeepAlive = false;
                     }
+
                     return request;
                 }
             }
@@ -1933,6 +2071,7 @@ FROM
 WHERE	
     [Key] = 'EVENT_NAME'");
                     var eventNames = cmd.ExecuteToList<string>();
+
                     return eventNames;
                 }
                 /// <summary>	
@@ -1948,6 +2087,7 @@ SELECT DISTINCT
 FROM	
     [{Configuration.SchemaName}].EventTopic");
                     var topicKeys = cmd.ExecuteToList<string>();
+
                     return topicKeys;
                 }
                 /// <summary>	
@@ -1981,7 +2121,9 @@ FROM
 WHERE	
     e.EventId = @eventId")
                     .AddParameter("@eventId", eventId, DbType.Int64);
+
                     var result = cmd.ExecuteToDynamicList();
+
                     return ToEvent(result);
                 }
                 /// <summary>	
@@ -2027,36 +2169,49 @@ WHERE
 ORDER BY	
     E.EventId DESC")
                         .AddParameter("@count", count, DbType.Int32);
+
                     var joins = string.Empty;
+
                     if (!string.IsNullOrEmpty(eventName))
                     {
                         joins += $@"	
 INNER JOIN [{Configuration.SchemaName}].EventTopic T1 ON T1.EventId = E.EventId	
                                 AND T1.[Key] = 'EVENT_NAME'	
                                 AND T1.Value = @eventName ";
+
                         cmd.AddParameter("@eventName", eventName, DbType.AnsiString);
                     }
+
                     if (!string.IsNullOrEmpty(topicKey))
                     {
                         joins += $@"	
 INNER JOIN [{Configuration.SchemaName}].EventTopic T2 ON T2.EventId = E.EventId	
                                 AND T2.[Key] = @topicKey";
+
                         cmd.AddParameter("@topicKey", topicKey, DbType.AnsiString);
                     }
+
                     cmd.SetCommandText(string.Format(cmd.DbCommand.CommandText, joins));
+
                     var dbResult = cmd.ExecuteToDynamicList();
+
                     var distinctEvents = new Dictionary<long, List<dynamic>>();
+
                     foreach (var @event in dbResult)
                     {
                         var eventId = Convert.ToInt64(@event.EventId);
+
                         if (distinctEvents.ContainsKey(eventId))
                             distinctEvents[eventId].Add(@event);
                         else
                             distinctEvents.Add(eventId, new List<dynamic> { @event });
                     }
+
                     var events = new ConcurrentBag<Models.Event>();
+
                     Parallel.ForEach(distinctEvents, new ParallelOptions { MaxDegreeOfParallelism = 8 },
                         @event => events.Add(ToEvent(@event.Value)));
+
                     return events.OrderByDescending(x => x.EventId).ToList();
                 }
                 /// <summary>	
@@ -2083,16 +2238,21 @@ WHERE
     EventId = @eventId	
 ")
                     .AddParameter("@eventId", eventId, DbType.Int64);
+
                     var eventSubscriptions = cmd.ExecuteToList<Models.EventSubscription>();
+
                     if (getSubscriptionInformation)
                     {
                         var subscriptions = GetSubscriptions(false);
+
                         foreach (var eventSubscription in eventSubscriptions)
                         {
                             var subscription = subscriptions.FirstOrDefault(x => x.SubscriptionId.ToInt() == eventSubscription.SubscriptionId.ToInt());
+
                             eventSubscription.Subscription = subscription;
                         }
                     }
+
                     return eventSubscriptions;
                 }
                 /// <summary>	
@@ -2124,21 +2284,27 @@ FROM
 {{1}}	
 ORDER BY	
     A.EventSubscriptionActivityId DESC");
+
                     var topN = string.Empty;
+
                     activityCount = activityCount.HasValue
                         ? activityCount
                         : (eventId == null || subscriptionId == null) ? 100 : new int?();
+
                     if (activityCount.HasValue)
                     {
                         topN += "TOP ( @count )";
                         cmd.AddParameter("@count", activityCount.Value, DbType.Int32);
                     }
+
                     var conditional = string.Empty;
+
                     if (eventId != null)
                     {
                         conditional += " WHERE A.EventId = @eventId ";
                         cmd.AddParameter("@eventId", eventId, DbType.Int64);
                     }
+
                     if (!string.IsNullOrEmpty(activityCode))
                     {
                         conditional += string.IsNullOrEmpty(conditional)
@@ -2146,6 +2312,7 @@ ORDER BY
                             : " AND A.ActivityTypeCode = @activityCode ";
                         cmd.AddParameter("@activityCode", activityCode, DbType.AnsiString);
                     }
+
                     if (subscriptionId != null)
                     {
                         conditional += string.IsNullOrEmpty(conditional)
@@ -2153,7 +2320,9 @@ ORDER BY
                             : " AND ES.SubscriptionId = @subscriptionId ";
                         cmd.AddParameter("@subscriptionId", subscriptionId, DbType.Int32);
                     }
+
                     cmd.SetCommandText(string.Format(cmd.DbCommand.CommandText, topN, conditional));
+
                     return cmd.ExecuteToList<Models.EventSubscriptionActivity>();
                 }
                 /// <summary>	
@@ -2208,10 +2377,14 @@ WHERE
 ");
                     cmd.AddParameter("@startDate", DateTime.Now.AddMinutes(-1 * (lookbackMinutes ?? Configuration.FailedEventsLookbackMinutes ?? 0)), DbType.DateTime)
                        .AddParameter("@endDate", DateTime.Now.AddMinutes(-1 * (lookbackUpToMinutes ?? Configuration.FailedEventsThresholdMinutes ?? 0)), DbType.DateTime);
+
                     var eventIds = cmd.ExecuteToList<long>();
+
                     var events = new ConcurrentBag<Models.Event>();
+
                     Parallel.ForEach(eventIds, new ParallelOptions { MaxDegreeOfParallelism = 8 },
                         eventId => events.Add(GetEvent(eventId)));
+
                     return events.OrderBy(x => x.EventId).ToList();
                 }
                 /// <summary>	
@@ -2267,19 +2440,26 @@ WHERE
                     .AddParameter("@startDate", DateTime.Now.AddMinutes(-1 * lookbackMinutes ?? Configuration.LiveRetryAbortAfterMinutes ?? 0),
                         DbType.DateTime)
                     .AddParameter("@abortMinutes", Configuration.DefaultAbortAfterMinutes ?? 0, DbType.Int32);
+
                     var dbResult = cmd.ExecuteToDynamicList();
+
                     if (!dbResult.Any())
                         return new List<Models.EventSubscription>();
+
                     var eventSubscriptions = new ConcurrentBag<Models.EventSubscription>();
+
                     Parallel.ForEach(dbResult.Select(x => x.EventId).Distinct(),
                         new ParallelOptions { MaxDegreeOfParallelism = 8 },
                         x =>
                         {
                             var data = dbResult.Where(y => y.EventId == x).ToList();
+
                             foreach (var subscription in data.Select(z => z.SubscriptionId).Distinct())
                             {
                                 var subscriptionData = data.Where(d => d.SubscriptionId == subscription).ToList();
+
                                 var first = subscriptionData.First();
+
                                 eventSubscriptions.Add(new Models.EventSubscription
                                 {
                                     EventSubscriptionId = first.EventSubscriptionId,
@@ -2294,9 +2474,12 @@ WHERE
                             }
                         }
                     );
+
                     var subscriptions = GetSubscriptions(true, null, null);
+
                     Parallel.ForEach(eventSubscriptions, new ParallelOptions { MaxDegreeOfParallelism = 8 },
                         x => x.Subscription = subscriptions.FirstOrDefault(s => Convert.ToInt32(s.SubscriptionId) == Convert.ToInt32(x.SubscriptionId)));
+
                     return eventSubscriptions.ToList();
                 }
                 /// <summary>	
@@ -2341,17 +2524,21 @@ WHERE
     1=1	
     {{0}}");
                     var conditional = string.Empty;
+
                     if (subscriptionId.HasValue)
                     {
                         conditional += " AND S.SubscriptionId = @subscriptionId ";
                         cmd.AddParameter("@subscriptionId", subscriptionId, DbType.Int32);
                     }
+
                     if (!string.IsNullOrEmpty(subscriptionName))
                     {
                         conditional += " AND R.SubscriptionName = @subscriptionName ";
                         cmd.AddParameter("@subscriptionName", subscriptionName, DbType.AnsiString);
                     }
+
                     cmd.SetCommandText(string.Format(cmd.DbCommand.CommandText, conditional));
+
                     var results = cmd.ExecuteToDynamicList();
                     // Group all topics from the same revision together.	
                     var revisionGroupings = results.GroupBy(
@@ -2398,12 +2585,14 @@ WHERE
                                     CreatedByHostName = t.TopicCreatedByHostName
                                 }).ToList()
                         });
+
                     if (activeOnly.HasValue)
                     {
                         subscriptions = subscriptions.Where(x => activeOnly.Value
                            ? x.SubscriptionStatusCode == Models.SubscriptionStatusCodes.Active
                            : x.SubscriptionStatusCode != Models.SubscriptionStatusCodes.Deleted);
                     }
+
                     return subscriptions.ToList();
                 }
                 /// <summary>	
@@ -2534,7 +2723,9 @@ IF OBJECT_ID('tempdb..#tmp3') IS NOT NULL
                         .SetCommandText(query)
                         .AddParameter("@TotalMinutes", totalMinutes ?? Configuration.ClockBackfillTotalMinutes ?? 0, DbType.Int32)
                         .AddParameter("@EndDate", DateTime.Now.AddMinutes(-1 * (offsetMinutes ?? Configuration.ClockBackfillOffsetMinutes ?? 0)), DbType.DateTime);
+
                     var missingEvents = cmd.ExecuteToList<Models.ClockEvent>();
+
                     return missingEvents;
                 }
                 /// <summary>	
@@ -2554,14 +2745,17 @@ IF OBJECT_ID('tempdb..#tmp3') IS NOT NULL
                         @event.CreatedByApplication,
                         @event.CreatedByUser
                     };
+
                     var cmd = GetDbCommand()
                         .GenerateInsertForSqlServer(obj, $"[{Configuration.SchemaName}].Event");
                     @event.EventId = Convert.ToInt64(cmd.ExecuteScalar());
+
                     if (saveTopics)
                     {
                         @event.EventTopics.ForEach(x => x.EventId = @event.EventId);
                         @event.EventTopics = SaveEventTopics(@event.EventTopics);
                     }
+
                     return @event;
                 }
                 /// <summary>	
@@ -2573,13 +2767,17 @@ IF OBJECT_ID('tempdb..#tmp3') IS NOT NULL
                 {
                     if (!eventTopics.Any())
                         return eventTopics;
+
                     var cmd = GetDbCommand()
                         .GenerateInsertsForSqlServer(eventTopics, $"[{Configuration.SchemaName}].EventTopic");
+
                     var ids = cmd.ExecuteToList<long>();
+
                     for (var i = 0; i < ids.Count; i++)
                     {
                         eventTopics[i].EventTopicId = ids[i];
                     }
+
                     return eventTopics;
                 }
                 /// <summary>	
@@ -2600,7 +2798,9 @@ IF OBJECT_ID('tempdb..#tmp3') IS NOT NULL
                         activity.CreatedByApplication,
                         activity.CreatedByUser
                     }, $"[{Configuration.SchemaName}].EventSubscriptionActivity");
+
                     activity.EventSubscriptionActivityId = Convert.ToInt64(cmd.ExecuteScalar());
+
                     return activity;
                 }
                 /// <summary>	
@@ -2622,11 +2822,14 @@ IF OBJECT_ID('tempdb..#tmp3') IS NOT NULL
                               x.CreatedByApplication,
                               x.CreatedByUser
                           }).ToList(), $"[{Configuration.SchemaName}].EventSubscription");
+
                     var ids = cmd.ExecuteToList<long>();
+
                     for (var i = 0; i < ids.Count; i++)
                     {
                         eventSubscriptions[i].EventSubscriptionId = ids[i];
                     }
+
                     return eventSubscriptions;
                 }
                 /// <summary>	
@@ -2637,6 +2840,7 @@ IF OBJECT_ID('tempdb..#tmp3') IS NOT NULL
                 public Models.Subscription SaveSubscription(Models.Subscription subscription)
                 {
                     DatabaseCommand cmd;
+
                     if (subscription.SubscriptionId == null)
                     {
                         cmd = GetDbCommand()
@@ -2650,6 +2854,7 @@ IF OBJECT_ID('tempdb..#tmp3') IS NOT NULL
                             }, $"[{Configuration.SchemaName}].Subscription");
                         subscription.SubscriptionId = cmd.ExecuteScalar<int>();
                     }
+
                     cmd = GetDbCommand()
                         .GenerateInsertForSqlServer(new
                         {
@@ -2667,7 +2872,9 @@ IF OBJECT_ID('tempdb..#tmp3') IS NOT NULL
                             subscription.CreatedByUser,
                             subscription.CreatedByApplication
                         }, $"[{Configuration.SchemaName}].SubscriptionRevision");
+
                     var revisionId = cmd.ExecuteScalar<int>();
+
                     cmd = GetDbCommand()
                         .SetCommandText($@"	
 UPDATE	
@@ -2679,7 +2886,9 @@ WHERE
 ")
                         .AddParameter("@revisionId", revisionId, DbType.Int32)
                         .AddParameter("@subscriptionId", subscription.SubscriptionId, DbType.Int32);
+
                     cmd.ExecuteNonQuery();
+
                     cmd = GetDbCommand()
                         .GenerateInsertsForSqlServer(subscription.Topics.Select(x => new
                         {
@@ -2692,11 +2901,14 @@ WHERE
                             x.CreatedByUser,
                             x.CreatedByApplication
                         }).ToList(), $"[{Configuration.SchemaName}].SubscriptionTopic");
+
                     var ids = cmd.ExecuteToList<int>();
+
                     for (var i = 0; i < ids.Count; i++)
                     {
                         subscription.Topics[i].SubscriptionTopicId = ids[i];
                     }
+
                     return subscription;
                 }
                 /// <summary>	
@@ -2707,6 +2919,7 @@ WHERE
                 public Models.Mutex GetActiveMutex(string mutexKey)
                 {
                     var hash = GenerateHash(mutexKey);
+
                     var cmd = GetDbCommand()
                         .SetCommandText($@"	
 SELECT TOP 1	
@@ -2719,7 +2932,9 @@ WHERE
     AND Expiration > GETDATE()	
     AND emr.EventMutexReleasedId IS NULL	
 ").AddParameter("@hash", hash, DbType.Binary);
+
                     var id = cmd.ExecuteScalar<long?>();
+
                     return id != null ? new Models.Mutex { MutexId = id } : null;
                 }
                 /// <summary>	
@@ -2731,6 +2946,7 @@ WHERE
                 public Models.Mutex TryAcquireMutex(string mutexKey, TimeSpan timeToLive)
                 {
                     var hash = GenerateHash(mutexKey);
+
                     var cmd = GetDbCommand()
                         .SetCommandText($@"	
 -- acquire lock	
@@ -2777,7 +2993,9 @@ IF @result IN ( 0, 1 )
                         .AddParameter("@expiration", DateTime.Now.Add(timeToLive), DbType.DateTime)
                         .AddParameter("@user", Configuration.UserName, DbType.AnsiString)
                         .AddParameter("@app", Configuration.AppName, DbType.AnsiString);
+
                     var result = cmd.ExecuteScalar<long?>();
+
                     return result != null
                         ? new Models.Mutex { MutexId = result }
                         : null;
@@ -2790,6 +3008,7 @@ IF @result IN ( 0, 1 )
                 {
                     if (mutex == null)
                         return;
+
                     var cmd = GetDbCommand()
                         .GenerateInsertForSqlServer(
                             new
@@ -2798,6 +3017,7 @@ IF @result IN ( 0, 1 )
                                 CreatedByUser = Configuration.UserName,
                                 CreatedByApplication = Configuration.AppName
                             }, $"[{Configuration.SchemaName}].EventMutexReleased");
+
                     cmd.ExecuteNonQuery();
                 }
                 /// <summary>	
@@ -2808,7 +3028,9 @@ IF @result IN ( 0, 1 )
                 private static Models.Event ToEvent(List<dynamic> dbResult)
                 {
                     if (!dbResult.Any()) return null;
+
                     var eventResult = dbResult.First();
+
                     var @event = new Models.Event
                     {
                         EventId = eventResult.EventId,
@@ -2820,6 +3042,7 @@ IF @result IN ( 0, 1 )
                         CreatedByUser = eventResult.CreatedByUser,
                         CreatedByHostName = eventResult.CreatedByHostName
                     };
+
                     foreach (var topic in dbResult.Where(x => x.EventTopicId != null))
                     {
                         @event.EventTopics.Add(new Models.EventTopic
@@ -2834,6 +3057,7 @@ IF @result IN ( 0, 1 )
                             CreatedByUser = topic.TopicCreatedByUser
                         });
                     }
+
                     return @event;
                 }
                 /// <summary>	
@@ -2846,12 +3070,15 @@ IF @result IN ( 0, 1 )
                     {
                         dynamic d1 = s1;
                         dynamic d2 = s2;
+
                         return d1.SubscriptionId == d2.SubscriptionId &&
                                d1.Key == d2.Key;
                     }
+
                     public int GetHashCode(T s)
                     {
                         dynamic d = s;
+
                         return d.SubscriptionId.GetHashCode() ^ d.Key.GetHashCode();
                     }
                 }
@@ -2863,12 +3090,15 @@ IF @result IN ( 0, 1 )
                 {
                     if (Configuration.DatabaseConnectionString == null)
                         throw new Exception("No function provided for retrieving Database connection string");
+
                     var connectionString = Configuration.DatabaseConnectionString();
+
                     var builder = new SqlConnectionStringBuilder(connectionString)
                     {
                         ApplicationName = Configuration.AppName
                     };
-                    return SequelocityDotNet.Sequelocity.GetDatabaseCommandForSqlServer(builder.ToString());
+
+                    return Sequelocity.GetDatabaseCommandForSqlServer(builder.ToString());
                 }
                 /// <summary>	
                 /// Method for generating SHA1 hash. This is used for mutex keys.	
@@ -2878,10 +3108,12 @@ IF @result IN ( 0, 1 )
                 private static byte[] GenerateHash(string value)
                 {
                     byte[] hash;
+
                     using (var provider = new SHA1CryptoServiceProvider())
                     {
                         hash = provider.ComputeHash(Encoding.ASCII.GetBytes(value));
                     }
+
                     return hash;
                 }
             }
@@ -2981,10 +3213,12 @@ IF @result IN ( 0, 1 )
         public static NameValueCollection ToNameValueCollection(this Dictionary<string, string> source)
         {
             NameValueCollection retVal = new NameValueCollection();
+
             foreach (var obj in source)
             {
                 retVal.Add(obj.Key, obj.Value);
             }
+
             return retVal;
         }
         /// <summary>	
@@ -2998,6 +3232,7 @@ IF @result IN ( 0, 1 )
             auditEntity.CreateDate = DateTime.Now;
             auditEntity.CreatedByApplication = Spoke.Configuration.AppName;
             auditEntity.CreatedByUser = Spoke.Configuration.UserName;
+
             return auditEntity;
         }
         /// <summary>	
@@ -3042,7 +3277,9 @@ IF @result IN ( 0, 1 )
         {
             if (string.IsNullOrEmpty(input))
                 return input;
+
             var regex = new Regex("([a-z])([A-Z])");
+
             return regex.Replace(input, "$1_$2").ToUpper();
         }
         /// <summary>	
@@ -3053,6 +3290,7 @@ IF @result IN ( 0, 1 )
         public static bool ValidateTopicKeys(this IDictionary<string, string> keys)
         {
             var regex = new Regex("^[a-zA-Z0-9_]+$");
+
             return keys.All(x => regex.IsMatch(x.Key));
         }
         /// <summary>	
@@ -3077,9 +3315,11 @@ IF @result IN ( 0, 1 )
                 var notification =
                     notifications.FirstOrDefault(
                         x => x.EventSubscription.SubscriptionId.ToInt() == eventSubscription.SubscriptionId.ToInt());
+
                 if (notification != null)
                     notification.EventSubscription.EventSubscriptionId = eventSubscription.EventSubscriptionId;
             }
+
             return notifications;
         }
     }
@@ -3093,11 +3333,15 @@ IF @result IN ( 0, 1 )
             The MIT License	
             Copyright (c) 2007 James Newton-King	
             License available at: https://github.com/JamesNK/Newtonsoft.Json/blob/master/LICENSE.md	
+ 
     - JINT: https://github.com/sebastienros/jint	
+    
             BSD 2-Clause License	
             Copyright (c) 2013, Sebastien Ros	
             License available at: https://github.com/sebastienros/jint/blob/master/LICENSE.txt	
+    
     - Sequelocity.NET: https://github.com/AmbitEnergyLabs/Sequelocity.NET	
+    
             The MIT License	
             Copyright (c) 2015 Ambit Energy	
             License available at: https://github.com/AmbitEnergyLabs/Sequelocity.NET/blob/master/LICENSE	
