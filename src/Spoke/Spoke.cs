@@ -26,7 +26,6 @@
     OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
     THE SOFTWARE.
 */
-
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -48,7 +47,6 @@ using Jint;
 using Newtonsoft.Json;
 using SequelocityDotNet;
 using Environment = System.Environment;
-
 namespace Spoke
 {
     /// <summary>
@@ -73,7 +71,6 @@ namespace Spoke
         {
             Configuration = configuration;
         }
-
         /// <summary>
         /// Starts the internal clock thread.
         /// </summary>
@@ -82,7 +79,6 @@ namespace Spoke
             InternalApi.StartClock();
             InternalApi.StartWorkerThreads();
         }
-
         /// <summary>
         /// Api methods that will be commonly used by external users.
         /// </summary>
@@ -114,23 +110,19 @@ namespace Spoke
                 {
                     topics.Add("EventName", eventName);
                 }
-
                 var validTopicKeys = topics.ValidateTopicKeys();
 
                 if (!validTopicKeys)
                 {
                     throw new Exception("Topic keys can only contain alphanumeric and underscore characters.");
                 }
-
                 topics = topics.NormalizeKeys();
-
                 var validTopicValues = topics.ValidateTopicValues();
 
                 if (!validTopicValues)
                 {
                     throw new Exception("Topic values cannot be null.");
                 }
-
                 var @event = new Models.Event
                 {
                     EventPayload = eventPayload,
@@ -149,7 +141,6 @@ namespace Spoke
 
                 return new Models.PublishEventResponse() { Event = @event, EventId = @event.EventId.ToString() };
             }
-
             /// <summary>
             /// Adds a new subscription.
             /// </summary>
@@ -195,7 +186,6 @@ namespace Spoke
 
                 return subscription;
             }
-
             /// <summary>
             /// Update an existing subscription.
             /// </summary>
@@ -247,7 +237,6 @@ namespace Spoke
                          : subscription.Topics,
                      requestType ?? subscription.RequestType);
             }
-
             /// <summary>
             /// Change the status ( ACTIVE, INACTIVE ) of a current subscription
             /// </summary>
@@ -282,13 +271,11 @@ namespace Spoke
                     subscriptionId,
                     Models.SubscriptionStatusCodes.Deleted
                      );
-
                 return new Models.SubscriptionResponse
                 {
                     Subscription = subscription.Subscription
                 };
             }
-
             /// <summary>
             /// Get subscription by subscription id or subscription name.
             /// </summary>
@@ -307,7 +294,6 @@ namespace Spoke
                     Subscription = subscription
                 };
             }
-
             /// <summary>
             /// Get a distinct list of names of all events that have been published.
             /// </summary>
@@ -315,13 +301,11 @@ namespace Spoke
             public static Models.EventNamesResponse GetAllEventNames()
             {
                 var eventNames = Configuration.Database().GetAllEventNames();
-
                 return new Models.EventNamesResponse
                 {
                     EventNames = eventNames
                 };
             }
-
             /// <summary>
             /// Get a distinct list of topics.
             /// </summary>
@@ -329,13 +313,11 @@ namespace Spoke
             public static Models.TopicKeysResponse GetAllTopicKeys()
             {
                 var topicKeys = Configuration.Database().GetAllTopicKeys();
-
                 return new Models.TopicKeysResponse
                 {
                     TopicKeys = topicKeys
                 };
             }
-
             /// <summary>
             /// Get a list of supported operators. Ex. IN, NOT IN, LIKE, EQUALS
             /// </summary>
@@ -344,7 +326,6 @@ namespace Spoke
             {
                 return new Models.OperatorTypeCodesResponse() { ValidOperatorTypeCodes = new List<string> { Utils.Operator.Equal, Utils.Operator.Like, Utils.Operator.In, Utils.Operator.NotIn } };
             }
-
             /// <summary>
             /// Get a list of valid service type codes. By default the only one will be "DEFAULT".
             /// </summary>
@@ -357,7 +338,6 @@ namespace Spoke
                 };
             }
         }
-
         /// <summary>
         /// Api methods that will be commonly used by internal users. These methods should generally not be exposed to external users.
         /// </summary>
@@ -408,7 +388,6 @@ namespace Spoke
 
                 return new Models.ClockEventsResponse { ClockEvents = missingClockEvents.ToList() };
             }
-
             /// <summary>
             /// Generate a notification for a subscription on an event.
             /// </summary>
@@ -423,7 +402,6 @@ namespace Spoke
                     @event,
                     new List<Models.Subscription> { subscription }).SubscriptionNotifications.FirstOrDefault();
             }
-
             /// <summary>
             /// Get an event by the eventid
             /// </summary>
@@ -440,7 +418,6 @@ namespace Spoke
                     Event = @event
                 };
             }
-
             /// <summary>
             /// Get events by count, eventName, and/or topicKey
             /// </summary>
@@ -465,7 +442,6 @@ namespace Spoke
                     Events = new List<Models.Event>(events)
                 };
             }
-
             /// <summary>
             /// Get all subscription related to an event by event id.
             /// </summary>
@@ -482,7 +458,6 @@ namespace Spoke
                     EventSubscriptions = new List<dynamic>(eventSubscriptions)
                 };
             }
-
             /// <summary>
             /// Get any failed events within the given time frame.
             /// </summary>
@@ -501,7 +476,6 @@ namespace Spoke
                     Events = new List<Models.Event>(events)
                 };
             }
-
             /// <summary>
             /// Get any failed notifications within the give time frame
             /// </summary>
@@ -530,7 +504,6 @@ namespace Spoke
 
                 return new Models.SubscriptionNotificationsResponse { SubscriptionNotifications = subscriptionNotifications.ToList() };
             }
-
             /// <summary>
             /// Get the latest activity for an event or a subscription.
             /// </summary>
@@ -551,7 +524,6 @@ namespace Spoke
                     Activity = new List<dynamic>(activity)
                 };
             }
-
             /// <summary>
             /// Generate all notifications associated with an event.
             /// </summary>
@@ -564,7 +536,6 @@ namespace Spoke
 
                 return new Models.SubscriptionNotificationsResponse { SubscriptionNotifications = GenerateSubscriptionNotificationsForEvent(@event).SubscriptionNotifications };
             }
-
             /// <summary>
             /// Get a list of all subscription or active subscriptions.
             /// </summary>
@@ -581,7 +552,6 @@ namespace Spoke
                     Subscriptions = new List<Models.Subscription>(subscriptions)
                 };
             }
-
             /// <summary>
             /// Process an event.
             /// </summary>
@@ -624,7 +594,6 @@ namespace Spoke
                             Message = "Event not process: " + Utils.EventSubscriptionActivityTypeCode.EventProcessingMutexCouldNotBeAcquired
                         };
                     }
-
                     var notifications = new List<Models.SubscriptionNotification>();
                     string activityTypeCode;
 
@@ -679,7 +648,6 @@ namespace Spoke
 
                 return result;
             }
-
             /// <summary>
             /// Process a list of notifications
             /// </summary>
@@ -697,7 +665,6 @@ namespace Spoke
                             lNotification));
                 }
             }
-
             /// <summary>
             /// Publish a clock event.
             /// </summary>
@@ -719,7 +686,6 @@ namespace Spoke
                     {"Minute", time.Minute.ToString(CultureInfo.InvariantCulture)},
                     });
             }
-
             /// <summary>
             /// Re-publish an event.
             /// </summary>
@@ -739,7 +705,6 @@ namespace Spoke
                     Event = @event
                 };
             }
-
             /// <summary>
             /// Save event topics
             /// </summary>
@@ -760,7 +725,6 @@ namespace Spoke
 
                 return new Models.EventTopicsResponse { EventTopics = Configuration.Database().SaveEventTopics(eventTopics) };
             }
-
             /// <summary>
             /// Save the status of a subscription
             /// </summary>
@@ -788,7 +752,6 @@ namespace Spoke
                     subscription.Topics,
                     subscription.RequestType);
             }
-
             /// <summary>
             /// Save a subscription.
             /// </summary>
@@ -819,7 +782,6 @@ namespace Spoke
                 {
                     throw new Exception("You must subscription to at least 1 topic!");
                 }
-
                 var subscription = new Models.Subscription
                 {
                     SubscriptionId = subscriptionId,
@@ -859,10 +821,9 @@ namespace Spoke
                     {
                         try
                         {
-
                             var mutex = Configuration.SendClockMessages.GetValueOrDefault()
-                               ? Configuration.Database().TryAcquireMutex("clock-loop",
-                                   TimeSpan.FromMinutes(1).Add(TimeSpan.FromSeconds(30)))
+                                ? Configuration.Database().TryAcquireMutex("clock-loop",
+                                    TimeSpan.FromMinutes(1).Add(TimeSpan.FromSeconds(30)))
                                 : null;
 
                             if (mutex == null)
@@ -965,7 +926,6 @@ namespace Spoke
                     Message = "Task Started."
                 };
             }
-
             /// <summary>
             /// Sweep any failed notifications.
             /// </summary>
@@ -998,9 +958,7 @@ namespace Spoke
                 };
             }
             #endregion
-
             #region Private Methods
-
             /// <summary>
             /// Wrapper to handle exceptions during a function call.
             /// </summary>
@@ -1040,7 +998,6 @@ namespace Spoke
                bool retry)
             {
                 var timeoutMinutes = Configuration.DefaultAbortAfterMinutes.ToInt();
-
                 var startTime = DateTime.Now;
                 var timeout = TimeSpan.FromMinutes(timeoutMinutes);
                 var currentWaitTime = TimeSpan.FromSeconds(1).Milliseconds;
@@ -1086,7 +1043,6 @@ namespace Spoke
                     Exception = new AggregateException(exceptions)
                 };
             }
-
             /// <summary>
             /// Async excute a notification
             /// </summary>
@@ -1166,7 +1122,7 @@ namespace Spoke
                                 responseTask = HttpPostObjectAsync( notification.Uri, notification.Payload.ToString() );
                                     break;
                                 default:
-                                throw new Exception("Request type does not exist!");
+                                    throw new Exception("Request type does not exist!");
                             }
 
                         LogEventSubscriptionActivity(
@@ -1187,10 +1143,9 @@ namespace Spoke
                         notification.EventSubscription.Event.EventId,
                         notification.EventSubscription.EventSubscriptionId,
                         mutexKey,
-                       true);
+                        true);
                 });
             }
-
             /// <summary>
             /// Get the subscriptions matching to the event topics.
             /// </summary>
@@ -1203,14 +1158,13 @@ namespace Spoke
                 var matchingSubscriptions = new List<Models.Subscription>();
 
                 foreach (var subscription in subscriptions)
-                {
+                    {
                     if (IsSubscriptionForEvent(eventTopics, subscription.Topics).Matches)
                         matchingSubscriptions.Add(subscription);
                 }
 
                 return new Models.SubscriptionsResponse { Subscriptions = matchingSubscriptions };
             }
-
             /// <summary>
             /// Generation subscription notifications for an <see cref="Models.Event"/> and list of <see cref="Models.Subscription"/>
             /// </summary>
@@ -1277,7 +1231,6 @@ namespace Spoke
 
                 return new Models.SubscriptionNotificationsResponse { SubscriptionNotifications = notifications };
             }
-
             /// <summary>
             /// Generate notification for an event id and a single <see cref="Models.Subscription"/>
             /// </summary>
@@ -1297,7 +1250,6 @@ namespace Spoke
                     subscription)
                 };
             }
-
             /// <summary>
             /// Generation notifications for all subscription related to an <see cref="Models.Event"/>
             /// </summary>
@@ -1315,7 +1267,6 @@ namespace Spoke
                     GetMatchingSubscriptions(@event.Topics, subscriptions).Subscriptions).SubscriptionNotifications
                 };
             }
-
             /// <summary>
             /// Handle the http response for a notification.
             /// </summary>
@@ -1353,7 +1304,6 @@ namespace Spoke
                         backoffTime);
                 }
             }
-
             /// <summary>
             /// Http get operation.
             /// </summary>
@@ -1363,7 +1313,6 @@ namespace Spoke
             private static async Task<Models.HttpResponse> HttpGetAsync( string url, NameValueCollection parameters )
             {
                 var sw = new Stopwatch();
-
                 try
                 {
                     string response;
@@ -1386,7 +1335,6 @@ namespace Spoke
                     // The HTTP Response Status is only returned when there is
                     // an exception (i.e. it is not a 200), so we set it oursevles.
                     obj.StatusCode = HttpStatusCode.OK;
-
                     return new Models.HttpResponse
                     {
                         Response = obj,
@@ -1397,7 +1345,6 @@ namespace Spoke
                 {
                     if (sw.IsRunning)
                         sw.Stop();
-
                     return new Models.HttpResponse
                     {
                         Response = ex.Response,
@@ -1409,7 +1356,6 @@ namespace Spoke
                 {
                     if (sw.IsRunning)
                         sw.Stop();
-
                     return new Models.HttpResponse
                     {
                         Exception = ex,
@@ -1417,7 +1363,6 @@ namespace Spoke
                     };
                 }
             }
-
             /// <summary>
             /// Http post object operation.
             /// </summary>
@@ -1480,7 +1425,6 @@ namespace Spoke
                     };
                 }
             }
-
             /// <summary>
             /// Http post parameters operation.
             /// </summary>
@@ -1545,7 +1489,6 @@ namespace Spoke
                     };
                 }
             }
-
             /// <summary>
             /// Is the subscription for the given event.
             /// </summary>
@@ -1610,7 +1553,6 @@ namespace Spoke
 
                 return new Models.IsSubscriptionForEventResponse { Matches = matches };
             }
-
             /// <summary>
             /// Log event subscription activity
             /// </summary>
@@ -1630,7 +1572,6 @@ namespace Spoke
 
                 Configuration.Database().SaveEventSubscriptionActivity(activity);
             }
-
             /// <summary>
             /// Process the javascript transform for the subscription.
             /// </summary>
@@ -1651,10 +1592,8 @@ namespace Spoke
                 // All curly brackets need to be escaped by doubling the brackets since
                 // we are using String.Format
                 const string script = @"
-
 function isArray(object) {{
   var retVal = false;
-
   if (Object.prototype.toString.call(object) === '[object Array]') {{
     retVal = true;
   }}
@@ -1796,7 +1735,6 @@ function processTransform(eventData, topicData) {{
                         input
                         );
             }
-
             /// <summary>
             /// Format the give date parts into a string.
             /// </summary>
@@ -1810,7 +1748,6 @@ function processTransform(eventData, topicData) {{
             }
             #endregion
         }
-
         /// <summary>
         /// All of the models used throughout spoke.
         /// </summary>
@@ -1823,7 +1760,6 @@ function processTransform(eventData, topicData) {{
             {
                 public List<dynamic> Activity;
             }
-
             /// <summary>
             /// Contains the basic fields used for auditing.
             /// </summary>
@@ -1834,7 +1770,6 @@ function processTransform(eventData, topicData) {{
                 public string CreatedByUser;
                 public string CreatedByHostName;
             }
-
             /// <summary>
             /// Clock Event.
             /// </summary>
@@ -1858,10 +1793,8 @@ function processTransform(eventData, topicData) {{
             public class GetApiUriInput
             {
                 public string Uri;
-
                 public string ApiType;
             }
-
             /// <summary>
             /// Contains a list of Event Subscriptions.
             /// </summary>
@@ -1869,7 +1802,6 @@ function processTransform(eventData, topicData) {{
             {
                 public List<dynamic> EventSubscriptions;
             }
-
             /// <summary>
             /// Contains a subscription.
             /// </summary>
@@ -1877,7 +1809,6 @@ function processTransform(eventData, topicData) {{
             {
                 public Subscription Subscription;
             }
-
             /// <summary>
             /// Contains a list of subscriptions.
             /// </summary>
@@ -1885,7 +1816,6 @@ function processTransform(eventData, topicData) {{
             {
                 public List<Subscription> Subscriptions;
             }
-
             /// <summary>
             /// Event.
             /// </summary>
@@ -1897,7 +1827,6 @@ function processTransform(eventData, topicData) {{
                 public IDictionary<string, string> Topics;
                 public List<EventTopic> EventTopics = new List<EventTopic>();
             }
-
             /// <summary>
             /// Contains a list of event names.
             /// </summary>
@@ -1905,7 +1834,6 @@ function processTransform(eventData, topicData) {{
             {
                 public List<string> EventNames;
             }
-
             /// <summary>
             /// EventTopic.
             /// </summary>
@@ -1916,7 +1844,6 @@ function processTransform(eventData, topicData) {{
                 public string Key;
                 public string Value;
             }
-
             /// <summary>
             /// Contains an <see cref="Event"/>
             /// </summary>
@@ -1924,7 +1851,6 @@ function processTransform(eventData, topicData) {{
             {
                 public Event Event;
             }
-
             /// <summary>
             /// Contains a list of <see cref="Event"/>
             /// </summary>
@@ -1932,7 +1858,6 @@ function processTransform(eventData, topicData) {{
             {
                 public List<Event> Events;
             }
-
             /// <summary>
             /// EventSubscription.
             /// </summary>
@@ -1944,7 +1869,6 @@ function processTransform(eventData, topicData) {{
                 public Event Event;
                 public Subscription Subscription;
             }
-
             /// <summary>
             /// EventSubscriptionActivity.
             /// </summary>
@@ -1956,7 +1880,6 @@ function processTransform(eventData, topicData) {{
                 public object EventSubscriptionId;
                 public object ActivityData;
             }
-
             /// <summary>
             /// Contains the result of a function and/or the exception from that function.
             /// </summary>
@@ -1966,7 +1889,6 @@ function processTransform(eventData, topicData) {{
                 public T Result;
                 public Exception Exception;
             }
-
             /// <summary>
             /// Http Response.
             /// </summary>
@@ -1976,7 +1898,6 @@ function processTransform(eventData, topicData) {{
                 public Exception Exception;
                 public long HttpRequestTimeInMilliseconds;
             }
-
             /// <summary>
             /// Mutex.
             /// </summary>
@@ -1984,7 +1905,6 @@ function processTransform(eventData, topicData) {{
             {
                 public object MutexId;
             }
-
             /// <summary>
             /// Contains a list of valid operator types codes.
             /// </summary>
@@ -1992,7 +1912,6 @@ function processTransform(eventData, topicData) {{
             {
                 public List<string> ValidOperatorTypeCodes;
             }
-
             /// <summary>
             /// Contains the idea of the published event along with an event object.
             /// </summary>
@@ -2000,7 +1919,6 @@ function processTransform(eventData, topicData) {{
             {
                 public string EventId;
             }
-
             /// <summary>
             /// ProcessEventResponse.
             /// </summary>
@@ -2008,7 +1926,6 @@ function processTransform(eventData, topicData) {{
             {
                 public dynamic ProcessEventResult;
             }
-
             /// <summary>
             /// Contains a list of valid service type codes.
             /// </summary>
@@ -2016,7 +1933,6 @@ function processTransform(eventData, topicData) {{
             {
                 public List<string> ValidServiceTypeCodes;
             }
-
             /// <summary>
             /// Subscription.
             /// </summary>
@@ -2033,7 +1949,6 @@ function processTransform(eventData, topicData) {{
                 public string RequestType;
                 public List<SubscriptionTopic> Topics = new List<SubscriptionTopic>();
             }
-
             /// <summary>
             /// Contains a subscription.
             /// </summary>
@@ -2041,7 +1956,6 @@ function processTransform(eventData, topicData) {{
             {
                 public Subscription Subscription;
             }
-
             /// <summary>
             /// Contains the key, value, and operator type for a subscription topic.
             /// </summary>
@@ -2052,7 +1966,6 @@ function processTransform(eventData, topicData) {{
                 public string Value;
                 public string OperatorTypeCode;
             }
-
             /// <summary>
             /// Subscription notification.
             /// </summary>
@@ -2063,7 +1976,6 @@ function processTransform(eventData, topicData) {{
                 public object Payload;
                 public DateTime LiveRetryExpirationTime;
             }
-
             /// <summary>
             /// Contains the different subscription status codes.
             /// </summary>
@@ -2073,17 +1985,14 @@ function processTransform(eventData, topicData) {{
                 public const string Inactive = "INACTIVE";
                 public const string Deleted = "DELETED";
             }
-
             /// <summary>
             /// Contains the task configuration and a message.
             /// </summary>
             public class TaskResponse
             {
                 public dynamic TaskConfiguration;
-
                 public string Message;
             }
-
             /// <summary>
             /// Contains a list of topic keys.
             /// </summary>
@@ -2091,17 +2000,14 @@ function processTransform(eventData, topicData) {{
             {
                 public List<string> TopicKeys;
             }
-
             /// <summary>
             /// The input for the WasApiCallSuccessful func in <see cref="SpokeConfiguration"/>
             /// </summary>
             public class WasApiCallSuccessfulInput
             {
                 public HttpResponse HttpResponse;
-
                 public string ApiType;
             }
-
             /// <summary>
             /// Custom <see cref="WebClient"/> that turns off keep alive by default.
             /// </summary>
@@ -2160,13 +2066,11 @@ function processTransform(eventData, topicData) {{
                 /// </summary>
                 /// <returns>List of <see cref="string"/></returns>
                 List<string> GetAllEventNames();
-
                 /// <summary>
                 /// Method for returning a unique list of topic keys.
                 /// </summary>
                 /// <returns>List of <see cref="string"/></returns>
                 List<string> GetAllTopicKeys();
-
                 /// <summary>
                 /// Method for returning an event by id.
                 /// </summary>
@@ -2295,7 +2199,6 @@ function processTransform(eventData, topicData) {{
                 /// <param name="mutex">The <see cref="Models.Mutex"/> you are trying to release.</param>
                 void ReleaseMutex(Models.Mutex mutex);
             }
-
             /// <summary>
             /// Default SQL implementation.
             /// </summary>
@@ -2308,19 +2211,17 @@ function processTransform(eventData, topicData) {{
                 public List<string> GetAllEventNames()
                 {
                     var cmd = GetDbCommand()
-                     .SetCommandText(@"
+                     .SetCommandText($@"	
 SELECT DISTINCT
     Value
 FROM
-    dbo.EventTopic
+    [{Configuration.SchemaName}].EventTopic	
 WHERE
     [Key] = 'EVENT_NAME'");
 
                     var eventNames = cmd.ExecuteToList<string>();
-
                     return eventNames;
                 }
-
                 /// <summary>
                 /// Method for returning a unique list of topic keys.
                 /// </summary>
@@ -2328,17 +2229,14 @@ WHERE
                 public List<string> GetAllTopicKeys()
                 {
                     var cmd = GetDbCommand()
-                    .SetCommandText(@"
+                    .SetCommandText($@"	
 SELECT DISTINCT
     [Key]
 FROM
-    dbo.EventTopic");
-
+    [{Configuration.SchemaName}].EventTopic");
                     var topicKeys = cmd.ExecuteToList<string>();
-
                     return topicKeys;
                 }
-
                 /// <summary>
                 /// Method for returning an event by id.
                 /// </summary>
@@ -2347,7 +2245,7 @@ FROM
                 public Models.Event GetEvent(object eventId)
                 {
                     var cmd = GetDbCommand()
-                    .SetCommandText(@"
+                    .SetCommandText($@"	
 SELECT
     e.EventId
    ,e.EventData
@@ -2365,8 +2263,8 @@ SELECT
    ,et.CreatedByApplication AS TopicCreatedByApplication
    ,et.CreateDate AS TopicCreateDate
 FROM
-    dbo.Event e
-    LEFT JOIN dbo.EventTopic et ON et.EventId = e.EventId
+    [{Configuration.SchemaName}].Event e	
+    LEFT JOIN [{Configuration.SchemaName}].EventTopic et ON et.EventId = e.EventId	
 WHERE
     e.EventId = @eventId")
                     .AddParameter("@eventId", eventId, DbType.Int64);
@@ -2375,7 +2273,6 @@ WHERE
 
                     return ToEvent(result);
                 }
-
                 /// <summary>
                 /// Method for returning some of the latest events.
                 /// </summary>
@@ -2386,9 +2283,8 @@ WHERE
                 public List<Models.Event> GetLatestEvents(int? eventCount, string eventName, string topicKey)
                 {
                     var count = eventCount ?? 100;
-
                     var cmd = GetDbCommand()
-                        .SetCommandText(@"
+                        .SetCommandText($@"	
 SELECT
     E.EventId
    ,E.EventData
@@ -2406,15 +2302,15 @@ SELECT
    ,et.CreatedByApplication AS TopicCreatedByApplication
    ,et.CreateDate AS TopicCreateDate
 FROM
-    dbo.[Event] E
-    LEFT JOIN dbo.EventTopic et ON et.EventId = e.EventId
-    {0}
+    [{Configuration.SchemaName}].[Event] E	
+    LEFT JOIN [{Configuration.SchemaName}].EventTopic et ON et.EventId = e.EventId	
+    {{0}}	
 WHERE
     E.EventId IN (
         SELECT TOP ( @count )
             EventId
         FROM
-            dbo.Event
+            [{Configuration.SchemaName}].Event	
         ORDER BY 
             EventId DESC )
 ORDER BY
@@ -2424,16 +2320,16 @@ ORDER BY
                     var joins = string.Empty;
                     if (!string.IsNullOrEmpty(eventName))
                     {
-                        joins += @"
-INNER JOIN dbo.EventTopic T1 ON T1.EventId = E.EventId
+                        joins += $@"	
+INNER JOIN [{Configuration.SchemaName}].EventTopic T1 ON T1.EventId = E.EventId	
                                 AND T1.[Key] = 'EVENT_NAME'
                                 AND T1.Value = @eventName ";
                         cmd.AddParameter("@eventName", eventName, DbType.AnsiString);
                     }
                     if (!string.IsNullOrEmpty(topicKey))
                     {
-                        joins += @"
-INNER JOIN dbo.EventTopic T2 ON T2.EventId = E.EventId
+                        joins += $@"	
+INNER JOIN [{Configuration.SchemaName}].EventTopic T2 ON T2.EventId = E.EventId	
                                 AND T2.[Key] = @topicKey";
                         cmd.AddParameter("@topicKey", topicKey, DbType.AnsiString);
                     }
@@ -2448,7 +2344,6 @@ INNER JOIN dbo.EventTopic T2 ON T2.EventId = E.EventId
                         .OrderByDescending( x => x.EventId )
                         .ToList();
                 }
-
                 /// <summary>
                 /// Method for returning subscriptions related to an event.
                 /// </summary>
@@ -2458,7 +2353,7 @@ INNER JOIN dbo.EventTopic T2 ON T2.EventId = E.EventId
                 public List<Models.EventSubscription> GetEventSubscriptions(object eventId, bool getSubscriptionInformation)
                 {
                     var cmd = GetDbCommand()
-                    .SetCommandText(@"
+                    .SetCommandText($@"	
 SELECT
     EventSubscriptionId
     ,EventId
@@ -2468,7 +2363,7 @@ SELECT
     ,CreatedByUser
     ,CreatedByApplication
 FROM
-    dbo.EventSubscription
+    [{Configuration.SchemaName}].EventSubscription	
 WHERE
     EventId = @eventId
 ")
@@ -2487,10 +2382,8 @@ WHERE
                             eventSubscription.Subscription = subscription;
                         }
                     }
-
                     return eventSubscriptions;
                 }
-
                 /// <summary>
                 /// Method for returning current activity for event subscriptions
                 /// </summary>
@@ -2502,8 +2395,8 @@ WHERE
                 public List<Models.EventSubscriptionActivity> GetEventSubscriptionActivities(object eventId, object subscriptionId, string activityCode, int? activityCount)
                 {
                     var cmd = GetDbCommand()
-                    .SetCommandText(@"
-SELECT {0}
+                    .SetCommandText($@"	
+SELECT {{0}}	
     A.EventSubscriptionActivityId
    ,A.ActivityTypeCode
    ,A.EventId
@@ -2515,9 +2408,9 @@ SELECT {0}
    ,A.CreatedByUser
    ,A.CreatedByApplication
 FROM
-    dbo.EventSubscriptionActivity A
-    LEFT JOIN dbo.EventSubscription ES ON ES.EventSubscriptionId = A.EventSubscriptionId
-{1}
+    [{Configuration.SchemaName}].EventSubscriptionActivity A	
+    LEFT JOIN [{Configuration.SchemaName}].EventSubscription ES ON ES.EventSubscriptionId = A.EventSubscriptionId	
+{{1}}	
 ORDER BY
     A.EventSubscriptionActivityId DESC");
 
@@ -2558,7 +2451,6 @@ ORDER BY
 
                     return cmd.ExecuteToList<Models.EventSubscriptionActivity>();
                 }
-
                 /// <summary>
                 /// Method to retrieve a subscription
                 /// </summary>
@@ -2570,7 +2462,6 @@ ORDER BY
                     return GetSubscriptions(null, subscriptionId != null ? Convert.ToInt32(subscriptionId) : new int?(),
                         subscriptionName).FirstOrDefault();
                 }
-
                 /// <summary>
                 /// Method to retrieve all subscriptions.
                 /// </summary>
@@ -2580,26 +2471,25 @@ ORDER BY
                 {
                     return GetSubscriptions(activeOnly, null, null);
                 }
-
                 /// <summary>
                 /// Method to get failed events.
                 /// </summary>
                 /// <returns>List of <see cref="Models.Event"/></returns>
                 public List<Models.Event> GetFailedEvents(int? lookbackMinutes = null, int? lookbackUpToMinutes = null)
                 {
-                    var cmd = GetDbCommand().SetCommandText(@"
+                    var cmd = GetDbCommand().SetCommandText($@"	
 SELECT DISTINCT
     E.EventId
 FROM
-    dbo.[Event] E
-    LEFT JOIN dbo.EventSubscriptionActivity A ON A.EventId = E.EventId
+    [{Configuration.SchemaName}].[Event] E	
+    LEFT JOIN [{Configuration.SchemaName}].EventSubscriptionActivity A ON A.EventId = E.EventId	
                                                  AND ActivityTypeCode = 'SUBSCRIPTIONS_FOUND'
     LEFT JOIN ( SELECT
                     E.EventId
                    ,COUNT(*) AS TopicCount
                 FROM
-                    dbo.[Event] E
-                    JOIN dbo.EventTopic T ON T.EventId = E.EventId
+                    [{Configuration.SchemaName}].[Event] E	
+                    JOIN [{Configuration.SchemaName}].EventTopic T ON T.EventId = E.EventId	
                 GROUP BY
                     E.EventId
               ) TC ON TC.EventId = E.EventId
@@ -2624,7 +2514,6 @@ WHERE
 
                     return events.OrderBy(x => x.EventId).ToList();
                 }
-
                 /// <summary>
                 /// Method to get failed events subscription.
                 /// </summary>
@@ -2634,7 +2523,7 @@ WHERE
                 public List<Models.EventSubscription> GetFailedEventSubscriptions(int? lookbackMinutes = null, int? lookbackUpToMinutes = null)
                 {
                     var cmd = GetDbCommand()
-                    .SetCommandText(@"
+                    .SetCommandText($@"	
 SELECT
     ES.EventSubscriptionId
    ,ES.CreatedByHostName AS EsCreatedByHostName
@@ -2658,12 +2547,12 @@ SELECT
    ,ET.CreatedByApplication AS TopicCreatedByApplication
    ,ET.CreateDate AS TopicCreateDate
 FROM
-    dbo.[Event] E
-    INNER JOIN dbo.EventSubscription ES ON ES.EventId = E.EventId
-    INNER JOIN dbo.Subscription S ON S.SubscriptionId = ES.SubscriptionId
-    INNER JOIN dbo.SubscriptionRevision R ON R.SubscriptionRevisionId = S.CurrentSubscriptionRevisionId
-    LEFT JOIN dbo.EventTopic et ON et.EventId = E.EventId
-    LEFT JOIN dbo.EventSubscriptionActivity A ON A.EventId = E.EventId
+    [{Configuration.SchemaName}].[Event] E	
+    INNER JOIN [{Configuration.SchemaName}].EventSubscription ES ON ES.EventId = E.EventId	
+    INNER JOIN [{Configuration.SchemaName}].Subscription S ON S.SubscriptionId = ES.SubscriptionId	
+    INNER JOIN [{Configuration.SchemaName}].SubscriptionRevision R ON R.SubscriptionRevisionId = S.CurrentSubscriptionRevisionId	
+    LEFT JOIN [{Configuration.SchemaName}].EventTopic et ON et.EventId = E.EventId	
+    LEFT JOIN [{Configuration.SchemaName}].EventSubscriptionActivity A ON A.EventId = E.EventId	
                                                  AND A.EventSubscriptionId = ES.EventSubscriptionId
                                                  AND ActivityTypeCode = 'SUBSCRIPTION_RESPONSE_OK'
 WHERE
@@ -2715,7 +2604,6 @@ WHERE
 
                     return eventSubscriptions;
                 }
-
                 /// <summary>
                 /// Underlying method for getsubscription and getsubscriptions.
                 /// </summary>
@@ -2726,7 +2614,7 @@ WHERE
                 private static List<Models.Subscription> GetSubscriptions(bool? activeOnly, int? subscriptionId, string subscriptionName)
                 {
                     var cmd = GetDbCommand()
-                        .SetCommandText(@"
+                        .SetCommandText($@"	
 SELECT
     S.SubscriptionId
    ,R.SubscriptionName
@@ -2750,14 +2638,13 @@ SELECT
    ,T.CreatedByUser AS TopicCreatedByUser
    ,T.CreatedByHostName AS TopicCreatedByHostName
 FROM
-    dbo.Subscription S
-    INNER JOIN dbo.SubscriptionRevision R ON R.SubscriptionId = S.SubscriptionId
+    [{Configuration.SchemaName}].Subscription S	
+    INNER JOIN [{Configuration.SchemaName}].SubscriptionRevision R ON R.SubscriptionId = S.SubscriptionId	
                                              AND R.SubscriptionRevisionId = S.CurrentSubscriptionRevisionId
-    INNER JOIN dbo.SubscriptionTopic T ON T.SubscriptionRevisionId = R.SubscriptionRevisionId
+    INNER JOIN [{Configuration.SchemaName}].SubscriptionTopic T ON T.SubscriptionRevisionId = R.SubscriptionRevisionId	
 WHERE
     1=1
-    {0}");
-
+    {{0}}");
                     var conditional = string.Empty;
                     if (subscriptionId.HasValue)
                     {
@@ -2830,7 +2717,6 @@ WHERE
 
                     return subscriptions.ToList();
                 }
-
                 /// <summary>
                 /// Method to get missing clock events
                 /// </summary>
@@ -2842,7 +2728,7 @@ WHERE
                     int? offsetMinutes
                     )
                 {
-                    const string query = @"
+                    string query = $@"	
 IF OBJECT_ID('tempdb..#tmp') IS NOT NULL
   DROP TABLE #tmp
 
@@ -2888,8 +2774,8 @@ SELECT
 	, NULL
 	, NULL
 	, NULL
-FROM dbo.[Event] E (NOLOCK)
-JOIN dbo.EventTopic T (NOLOCK)
+FROM [{Configuration.SchemaName}].[Event] E (NOLOCK)	
+JOIN [{Configuration.SchemaName}].EventTopic T (NOLOCK)	
 ON T.EventId = E.EventId
 WHERE E.CreateDate > @StartDate
   AND T.[Key] = 'EVENT_NAME'
@@ -2910,7 +2796,7 @@ SELECT
   E.EventId
   , [Key]
   , [Value]
-FROM dbo.EventTopic T (NOLOCK)
+FROM [{Configuration.SchemaName}].EventTopic T (NOLOCK)	
 JOIN #tmp2 E
 ON E.EventId = T.EventId
 
@@ -2976,7 +2862,6 @@ IF OBJECT_ID('tempdb..#tmp3') IS NOT NULL
 
                     return missingEvents;
                 }
-
                 /// <summary>
                 /// Method to save an event.
                 /// </summary>
@@ -3009,7 +2894,6 @@ IF OBJECT_ID('tempdb..#tmp3') IS NOT NULL
 
                     return @event;
                 }
-
                 /// <summary>
                 /// Method for saving event topics.
                 /// </summary>
@@ -3032,7 +2916,6 @@ IF OBJECT_ID('tempdb..#tmp3') IS NOT NULL
 
                     return eventTopics;
                 }
-
                 /// <summary>
                 /// Method for saving event subscription activity.
                 /// </summary>
@@ -3050,7 +2933,7 @@ IF OBJECT_ID('tempdb..#tmp3') IS NOT NULL
                         activity.CreateDate,
                         activity.CreatedByApplication,
                         activity.CreatedByUser
-                    }, "dbo.EventSubscriptionActivity");
+                    }, $"[{Configuration.SchemaName}].EventSubscriptionActivity");
 
                     activity.EventSubscriptionActivityId = Convert.ToInt64(cmd.ExecuteScalar());
 
@@ -3075,7 +2958,7 @@ IF OBJECT_ID('tempdb..#tmp3') IS NOT NULL
                                 x.CreateDate,
                                 x.CreatedByApplication,
                                 x.CreatedByUser
-                            }).ToList(), "dbo.EventSubscription");
+                          }).ToList(), $"[{Configuration.SchemaName}].EventSubscription");
 
                     var ids = cmd.ExecuteToList<long>();
 
@@ -3086,7 +2969,6 @@ IF OBJECT_ID('tempdb..#tmp3') IS NOT NULL
 
                     return eventSubscriptions;
                 }
-
                 /// <summary>
                 /// Method for saving a subscription
                 /// </summary>
@@ -3105,7 +2987,7 @@ IF OBJECT_ID('tempdb..#tmp3') IS NOT NULL
                                 subscription.CreateDate,
                                 subscription.CreatedByUser,
                                 subscription.CreatedByApplication
-                            }, "dbo.Subscription");
+                            }, $"[{Configuration.SchemaName}].Subscription");
 
                         subscription.SubscriptionId = cmd.ExecuteScalar<int>();
                     }
@@ -3126,14 +3008,14 @@ IF OBJECT_ID('tempdb..#tmp3') IS NOT NULL
                             subscription.CreateDate,
                             subscription.CreatedByUser,
                             subscription.CreatedByApplication
-                        }, "dbo.SubscriptionRevision");
+                        }, $"[{Configuration.SchemaName}].SubscriptionRevision");
 
                     var revisionId = cmd.ExecuteScalar<int>();
 
                     cmd = GetDbCommand()
-                        .SetCommandText(@"
+                        .SetCommandText($@"	
 UPDATE
-    dbo.Subscription
+    [{Configuration.SchemaName}].Subscription	
 SET
     CurrentSubscriptionRevisionId = @revisionId
 WHERE
@@ -3155,7 +3037,7 @@ WHERE
                             x.CreateDate,
                             x.CreatedByUser,
                             x.CreatedByApplication
-                        }).ToList(), "SubscriptionTopic");
+                        }).ToList(), $"[{Configuration.SchemaName}].SubscriptionTopic");
 
                     var ids = cmd.ExecuteToList<int>();
 
@@ -3166,7 +3048,6 @@ WHERE
 
                     return subscription;
                 }
-
                 /// <summary>
                 /// Method for acquiring the active mutex.
                 /// </summary>
@@ -3177,12 +3058,12 @@ WHERE
                     var hash = GenerateHash(mutexKey);
 
                     var cmd = GetDbCommand()
-                        .SetCommandText(@"
+                        .SetCommandText($@"	
 SELECT TOP 1
     em.EventMutexId
 FROM
-    [dbo].[EventMutex] em
-    LEFT JOIN [dbo].[EventMutexReleased] emr ON emr.EventMutexId = em.EventMutexId
+    [{Configuration.SchemaName}].[EventMutex] em	
+    LEFT JOIN [{Configuration.SchemaName}].[EventMutexReleased] emr ON emr.EventMutexId = em.EventMutexId	
 WHERE
     Hash = @hash
     AND Expiration > GETDATE()
@@ -3193,7 +3074,6 @@ WHERE
 
                     return id != null ? new Models.Mutex { MutexId = id } : null;
                 }
-
                 /// <summary>
                 /// Method for trying to acquire a mutex.
                 /// </summary>
@@ -3205,7 +3085,7 @@ WHERE
                     var hash = GenerateHash(mutexKey);
 
                     var cmd = GetDbCommand()
-                        .SetCommandText(@"
+                        .SetCommandText($@"	
 -- acquire lock
 DECLARE @result INT
 EXEC @result = sp_getapplock @Resource = @key, -- name of the mutex
@@ -3213,21 +3093,20 @@ EXEC @result = sp_getapplock @Resource = @key, -- name of the mutex
     @LockOwner = 'Session', --lock lives while this session is active.
     @LockTimeout = @timeout,  -- anyone else trying to acquire this lock will wait this long before the thread returns a negative result. 
     @DbPrincipal = 'public'
-
 -- lock acquired
 IF @result IN ( 0, 1 )
     BEGIN
         IF NOT EXISTS ( SELECT TOP 1
                             1
                         FROM
-                            [dbo].[EventMutex] em
-                            LEFT JOIN [dbo].[EventMutexReleased] emr ON emr.EventMutexId = em.EventMutexId
+                            [{Configuration.SchemaName}].[EventMutex] em	
+                            LEFT JOIN [{Configuration.SchemaName}].[EventMutexReleased] emr ON emr.EventMutexId = em.EventMutexId	
                         WHERE
                             Hash = @hash
                             AND Expiration > GETDATE()
                             AND emr.EventMutexReleasedId IS NULL )
             BEGIN 
-                INSERT  INTO [dbo].[EventMutex]
+                INSERT  INTO [{Configuration.SchemaName}].[EventMutex]	
                         ( [Key]
                         ,[Hash]
                         ,[Expiration]
@@ -3277,11 +3156,10 @@ IF @result IN ( 0, 1 )
                                 EventMutexId = mutex.MutexId,
                                 CreatedByUser = Configuration.UserName,
                                 CreatedByApplication = Configuration.AppName
-                            }, "EventMutexReleased");
+                            }, $"[{Configuration.SchemaName}].EventMutexReleased");
 
                     cmd.ExecuteNonQuery();
                 }
-
                 /// <summary>
                 /// Method for converting the db result to <see cref="Models.Event"/>
                 /// </summary>
@@ -3345,7 +3223,6 @@ IF @result IN ( 0, 1 )
                         return d.SubscriptionId.GetHashCode() ^ d.Key.GetHashCode();
                     }
                 }
-
                 /// <summary>
                 /// Method wrapping the sequelocity get database command for sql server.
                 /// </summary>
@@ -3364,7 +3241,6 @@ IF @result IN ( 0, 1 )
 
                     return SequelocityDotNet.Sequelocity.GetDatabaseCommandForSqlServer(builder.ToString());
                 }
-
                 /// <summary>
                 /// Method for generating SHA1 hash. This is used for mutex keys.
                 /// </summary>
@@ -3377,18 +3253,15 @@ IF @result IN ( 0, 1 )
                     {
                         hash = provider.ComputeHash(Encoding.ASCII.GetBytes(value));
                     }
-
                     return hash;
                 }
             }
         }
-
         /// <summary>
         /// Class for storing constants and basic utils.
         /// </summary>
         public static class Utils
         {
-
             /// <summary>
             /// Event Activity Type Code Constants.
             /// </summary>
@@ -3406,7 +3279,6 @@ IF @result IN ( 0, 1 )
                 public const string EventSubscriptionPreviouslyFulfilled = "EVENT_SUBSCRIPTION_PREVIOUSLY_FULFILLED";
                 public const string InvokeServiceRequestGenerated = "INVOKE_SERVICE_REQUEST_GENERATED";
             }
-
             /// <summary>
             /// Operator Constatnts.
             /// </summary>
@@ -3417,7 +3289,6 @@ IF @result IN ( 0, 1 )
                 public const string In = "IN";
                 public const string NotIn = "NOT_IN";
             }
-
             /// <summary>
             /// Json Serializer.
             /// </summary>
@@ -3434,7 +3305,6 @@ IF @result IN ( 0, 1 )
                 }
             }
         }
-
         /// <summary>
         /// Spoke Configuration. This is all of the possible settings that can be modified throughout spoke.
         /// </summary>
@@ -3468,9 +3338,9 @@ IF @result IN ( 0, 1 )
             public Utils.JsonSerializer JsonSerializer = new Utils.JsonSerializer();
             public Func<DatabaseIO.ISpokeDatabase> Database = () => new DatabaseIO.SpokeSqlDatabase();
             public Func<string> DatabaseConnectionString = () => ConfigurationManager.ConnectionStrings["spoke"].ConnectionString;
+            public string SchemaName = "dbo";
         }
     }
-
     /// <summary>
     /// Extensions used throughout Spoke.
     /// </summary>
@@ -3492,7 +3362,6 @@ IF @result IN ( 0, 1 )
 
             return retVal;
         }
-
         /// <summary>
         /// Extension for updating auditing information.
         /// </summary>
@@ -3507,7 +3376,6 @@ IF @result IN ( 0, 1 )
 
             return auditEntity;
         }
-
         /// <summary>
         /// Extension for converting object o <see cref="int"/>
         /// </summary>
@@ -3517,7 +3385,6 @@ IF @result IN ( 0, 1 )
         {
             return Convert.ToInt32(value);
         }
-
         /// <summary>
         /// Extension for normalizing topic keys.
         /// </summary>
@@ -3527,7 +3394,6 @@ IF @result IN ( 0, 1 )
         {
             return dict.ToDictionary(kvp => NormalizeKey(kvp.Key), kvp => kvp.Value);
         }
-
         /// <summary>
         /// Extension for normalizing subscription topic keys.
         /// </summary>
@@ -3538,12 +3404,11 @@ IF @result IN ( 0, 1 )
             return topics.Select(topic =>
                 new Spoke.Models.SubscriptionTopic
                 {
-                    Key = NormalizeKey(topic.Key),
+                   Key = NormalizeKey(topic.Key),
                     Value = topic.Value,
                     OperatorTypeCode = topic.OperatorTypeCode
-                }).ToList();
+               }).ToList();
         }
-
         /// <summary>
         /// Extension to normalize a single string.
         /// </summary>
@@ -3558,7 +3423,6 @@ IF @result IN ( 0, 1 )
 
             return regex.Replace(input, "$1_$2").ToUpper();
         }
-
         /// <summary>
         /// Extension for validating Topic Keys.
         /// </summary>
@@ -3570,7 +3434,6 @@ IF @result IN ( 0, 1 )
 
             return keys.All(x => regex.IsMatch(x.Key));
         }
-
         /// <summary>
         /// Extension for validating topic values
         /// </summary>
@@ -3580,7 +3443,6 @@ IF @result IN ( 0, 1 )
         {
             return values.All(x => x.Value != null);
         }
-
         /// <summary>
         /// Extension for setting event subscription id's on event subscriptions
         /// </summary>
@@ -3602,9 +3464,7 @@ IF @result IN ( 0, 1 )
             return notifications;
         }
     }
-
     #region Open Source Attributions
-
     /*
     Open Source Attributions
     ------------------------
